@@ -4,6 +4,7 @@ import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/common/empty-state";
+import { runAction } from "@/components/common/run-action";
 import { ResponsiveDialog } from "@/components/common/responsive-dialog";
 import { Button } from "@/components/ui/button";
 import { uploadUrl } from "@/lib/uploads";
@@ -18,9 +19,7 @@ export function StoreList({ stores }: { stores: StoreSummary[] }) {
 
   async function remove(store: StoreSummary) {
     if (!window.confirm(`Supprimer « ${store.name} » ?`)) return;
-    const result = await deleteStoreAction(store.id);
-    if (result.ok) toast.success("Magasin supprimé");
-    else toast.error(result.message ?? "Suppression impossible");
+    await runAction(deleteStoreAction(store.id), "Magasin supprimé");
   }
 
   return (

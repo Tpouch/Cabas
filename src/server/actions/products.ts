@@ -5,6 +5,7 @@ import {
   createProduct,
   deleteProduct,
   getProduct,
+  ProductNotFoundError,
   type ProductSummary,
   updateProduct,
 } from "@/server/repositories/products";
@@ -75,7 +76,13 @@ export async function updateProductAction(
 }
 
 export async function deleteProductAction(id: string): Promise<ActionResult<null>> {
-  const product = await deleteProduct(id);
+  let product: ProductSummary;
+  try {
+    product = await deleteProduct(id);
+  } catch (error) {
+    if (error instanceof ProductNotFoundError) return failure("Ce produit n'existe plus.");
+    throw error;
+  }
   await deleteImage(product.photoPath);
   revalidatePath("/products");
   return { ok: true, data: null };

@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { toast } from "sonner";
 import { EntityCombobox } from "@/components/common/entity-combobox";
 import { ResponsiveDialog } from "@/components/common/responsive-dialog";
+import { runAction } from "@/components/common/run-action";
 import { Button } from "@/components/ui/button";
 import { uploadUrl } from "@/lib/uploads";
 import { addAlternativeAction } from "@/server/actions/alternatives";
@@ -15,9 +15,7 @@ export function AddAlternative({ productId, candidates }: { productId: string; c
 
   async function add() {
     if (!otherId) return;
-    const result = await addAlternativeAction(productId, otherId);
-    if (!result.ok) return toast.error(result.message ?? "Ajout impossible");
-    toast.success("Alternative ajoutée");
+    if (!(await runAction(addAlternativeAction(productId, otherId), "Alternative ajoutée"))) return;
     setOtherId(null);
     setOpen(false);
   }

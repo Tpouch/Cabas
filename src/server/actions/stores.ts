@@ -7,6 +7,7 @@ import {
   DuplicateStoreError,
   getStore,
   StoreInUseError,
+  StoreNotFoundError,
   type StoreSummary,
   updateStore,
 } from "@/server/repositories/stores";
@@ -85,6 +86,7 @@ export async function deleteStoreAction(id: string): Promise<ActionResult<null>>
     if (error instanceof StoreInUseError) {
       return failure("Ce magasin est utilisé par des prix ou des courses : il ne peut pas être supprimé.");
     }
+    if (error instanceof StoreNotFoundError) return failure("Ce magasin n'existe plus.");
     throw error;
   }
 }

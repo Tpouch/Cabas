@@ -2,6 +2,7 @@ import "server-only";
 import { cheapestStorePrice, latestPricesByStore } from "@/domain/latest-prices";
 import type { SizeUnit } from "@/domain/types";
 import { isUuid } from "@/lib/ids";
+import { Prisma } from "@/generated/prisma/client";
 import { db } from "@/server/db";
 
 export type ProductSummary = {
@@ -13,6 +14,8 @@ export type ProductSummary = {
   sizeUnit: SizeUnit;
   bestPriceCents: number | null;
 };
+
+export class ProductNotFoundError extends Error {}
 
 export type ProductInput = {
   name: string;
@@ -67,5 +70,15 @@ export async function updateProduct(id: string, input: ProductInput): Promise<Pr
 }
 
 export async function deleteProduct(id: string): Promise<ProductSummary> {
-  return toSummary(await db().product.delete({ where: { id }, select: withPrices }));
+  if (!isUuid(id)) throw new ProductNotFoundError();
+  try {
+    return toSummary(await db().product.delete({ where: { id }, select: withPrices }));
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") throw new ProductNotFoundError();
+    throw error;
+  }
+}
+
+export async function productExists(id: string): Promise<boolean> {
+  return isUuid(id) && (await db().product.count({ where: { id } })) > 0;
 }

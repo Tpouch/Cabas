@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { ResponsiveDialog } from "@/components/common/responsive-dialog";
+import { runAction } from "@/components/common/run-action";
 import { Button } from "@/components/ui/button";
 import { deleteProductAction, updateProductAction } from "@/server/actions/products";
 import type { ProductSummary } from "@/server/repositories/products";
@@ -20,10 +21,7 @@ export function ProductActions({ product }: { product: ProductSummary }) {
 
   async function remove() {
     if (!window.confirm(`Supprimer « ${product.name} » et ses prix ?`)) return;
-    const result = await deleteProductAction(product.id);
-    if (!result.ok) return toast.error(result.message ?? "Suppression impossible");
-    toast.success("Produit supprimé");
-    router.push("/products");
+    if (await runAction(deleteProductAction(product.id), "Produit supprimé")) router.push("/products");
   }
 
   return (

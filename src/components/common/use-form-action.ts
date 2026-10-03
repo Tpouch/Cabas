@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, startTransition, useActionState, useEffect } from "react";
+import { type FormEvent, startTransition, useActionState, useEffect, useRef } from "react";
 import type { ActionResult, ActionState, FieldErrors } from "@/server/actions/result";
 
 type FormAction<T> = (prev: ActionState<T>, formData: FormData) => Promise<ActionResult<T>>;
@@ -9,10 +9,20 @@ type FormAction<T> = (prev: ActionState<T>, formData: FormData) => Promise<Actio
 export function useFormAction<T>(action: FormAction<T>, onDone: (data: T) => void) {
   const [state, formAction, pending] = useActionState(action, null);
   const errors: FieldErrors = state && !state.ok ? state.errors : {};
+  const onDoneRef = useRef(onDone);
+  const handled = useRef<ActionState<T>>(null);
 
   useEffect(() => {
-    if (state?.ok) onDone(state.data);
-  }, [state, onDone]);
+    onDoneRef.current = onDone;
+  });
+
+  // Fire once per successful result, even if the parent re-renders with a new callback.
+  useEffect(() => {
+    if (state?.ok && handled.current !== state) {
+      handled.current = state;
+      onDoneRef.current(state.data);
+    }
+  }, [state]);
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

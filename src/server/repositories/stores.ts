@@ -1,6 +1,7 @@
 import "server-only";
 import { normalizeStoreName } from "@/domain/store-name";
 import { Prisma } from "@/generated/prisma/client";
+import { isUuid } from "@/lib/ids";
 import { db } from "@/server/db";
 
 export type StoreSummary = { id: string; name: string; address: string | null; logoPath: string | null };
@@ -8,6 +9,7 @@ type StoreInput = { name: string; address: string | null; logoPath: string | nul
 
 export class DuplicateStoreError extends Error {}
 export class StoreInUseError extends Error {}
+export class StoreNotFoundError extends Error {}
 
 const summary = { id: true, name: true, address: true, logoPath: true } as const;
 
@@ -20,6 +22,7 @@ export async function listStores(): Promise<StoreSummary[]> {
 }
 
 export async function getStore(id: string): Promise<StoreSummary | null> {
+  if (!isUuid(id)) return null;
   return db().store.findUnique({ where: { id }, select: summary });
 }
 
@@ -46,10 +49,12 @@ export async function updateStore(id: string, input: StoreInput): Promise<StoreS
 }
 
 export async function deleteStore(id: string): Promise<StoreSummary> {
+  if (!isUuid(id)) throw new StoreNotFoundError();
   try {
     return await db().store.delete({ where: { id }, select: summary });
   } catch (error) {
     if (isPrismaError(error, "P2003")) throw new StoreInUseError();
+    if (isPrismaError(error, "P2025")) throw new StoreNotFoundError();
     throw error;
   }
 }

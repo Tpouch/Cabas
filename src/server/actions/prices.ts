@@ -2,9 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { addManualPrice, UnknownStoreError } from "@/server/repositories/prices";
+import { productExists } from "@/server/repositories/products";
 import { text } from "./form-data";
 import { priceInputSchema } from "./prices.schema";
-import { type ActionResult, type ActionState, invalid } from "./result";
+import { type ActionResult, type ActionState, failure, invalid } from "./result";
 
 export async function addPriceAction(
   productId: string,
@@ -17,6 +18,7 @@ export async function addPriceAction(
     observedAt: text(formData, "observedAt"),
   });
   if (!parsed.success) return invalid(parsed.error);
+  if (!(await productExists(productId))) return failure("Ce produit n'existe plus.");
   try {
     await addManualPrice({
       productId,

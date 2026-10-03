@@ -2,7 +2,7 @@
 
 import { X } from "lucide-react";
 import Link from "next/link";
-import { toast } from "sonner";
+import { runAction } from "@/components/common/run-action";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { RankedAlternative } from "@/domain/alternatives";
@@ -43,10 +43,7 @@ export function AlternativesCarousel({ productId, items }: { productId: string; 
             size="icon"
             className="absolute top-0 right-0 size-11"
             aria-label={`Retirer ${item.name} des alternatives`}
-            onClick={async () => {
-              await removeAlternativeAction(productId, item.id);
-              toast.success("Alternative retirée");
-            }}
+            onClick={() => runAction(removeAlternativeAction(productId, item.id), "Alternative retirée")}
           >
             <X className="size-4" aria-hidden />
           </Button>

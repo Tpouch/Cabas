@@ -1,7 +1,8 @@
 import "server-only";
+import { Prisma } from "@/generated/prisma/client";
 import { isUuid } from "@/lib/ids";
 import { db } from "@/server/db";
-import { type ProductSummary, toSummary, withPrices } from "./products";
+import { ProductNotFoundError, type ProductSummary, toSummary, withPrices } from "./products";
 
 export class SelfAlternativeError extends Error {}
 
@@ -19,9 +20,17 @@ export async function listAlternatives(productId: string): Promise<ProductSummar
 }
 
 export async function linkAlternative(productId: string, otherId: string): Promise<void> {
+  if (!isUuid(productId) || !isUuid(otherId)) throw new ProductNotFoundError();
   if (productId === otherId) throw new SelfAlternativeError();
   const pair = orderedPair(productId, otherId);
-  await db().productAlternative.upsert({ where: { productAId_productBId: pair }, create: pair, update: {} });
+  try {
+    await db().productAlternative.upsert({ where: { productAId_productBId: pair }, create: pair, update: {} });
+  } catch (error) {
+    if (!(error instanceof Prisma.PrismaClientKnownRequestError)) throw error;
+    if (error.code === "P2003") throw new ProductNotFoundError();
+    // P2002: a concurrent request (double tap) created the same pair; the link exists, which is what we want.
+    if (error.code !== "P2002") throw error;
+  }
 }
 
 export async function unlinkAlternative(productId: string, otherId: string): Promise<void> {
