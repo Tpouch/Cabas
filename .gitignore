@@ -12,3 +12,4 @@ src/generated/
 .superpowers/
 next-env.d.ts
 !.env.example
+*.tsbuildinfo
