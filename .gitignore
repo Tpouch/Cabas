@@ -8,3 +8,4 @@ uploads/
 .DS_Store
 playwright-report/
 test-results/
+src/generated/

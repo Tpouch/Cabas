@@ -1,88 +1,93 @@
 # CLAUDE.md — cabas
 
-Application web auto-hébergée (mobile first) pour enregistrer ses courses, suivre ses
-dépenses, comparer les prix des produits entre magasins et préparer des listes de courses
-avec estimation du coût par magasin.
+Self-hosted, mobile-first web app to record grocery purchases, track spending, compare
+product prices across stores, and prepare shopping lists with a cost estimate per store.
 
-- Utilisateur unique, pas d'authentification : l'accès est restreint au réseau NetBird.
-- Hébergement : homelab, via `docker compose` (services `app` + `db`).
-- Langue de l'interface : français. Langue du code (identifiants, noms de fichiers) : anglais.
-- Les specs et plans vivent dans `docs/superpowers/specs/` et `docs/superpowers/plans/`.
+- Single user, no authentication: access is restricted to the NetBird network.
+- Hosting: homelab, via `docker compose` (services `app` + `db`).
+- UI language: French. Code language (identifiers, file names): English.
+- **All documentation is written in English** (this file, README, specs, plans, code comments).
+- Specs and plans live in `docs/superpowers/specs/` and `docs/superpowers/plans/`.
+- **Stack best practices: [`docs/best-practices.md`](docs/best-practices.md).** Read the
+  relevant section before working with a given tool, and follow it.
 
 ## Stack
 
-| Rôle | Choix |
-|------|-------|
-| Framework | Next.js 15 (App Router), TypeScript strict |
-| Base de données | PostgreSQL 17 |
-| ORM / migrations | Prisma |
-| UI | Tailwind CSS + shadcn/ui |
-| Graphiques | Recharts |
-| Images | sharp (redimensionnement + miniatures à l'upload) |
-| Validation | Zod (entrées de formulaires et Server Actions) |
-| Tests unitaires / intégration | Vitest (+ Testing Library pour les composants) |
-| Tests end-to-end | Playwright (parcours critiques uniquement) |
-| Déploiement | Docker (image Next.js `standalone`, build multi-étapes) |
+| Role | Choice |
+|------|--------|
+| Runtime / package manager | Node.js 24 LTS, **pnpm** 10 |
+| Framework | Next.js 16 (App Router), React 19.2, TypeScript strict |
+| Database | PostgreSQL 18 |
+| ORM / migrations | Prisma 7 (`@prisma/adapter-pg`) |
+| UI | Tailwind CSS 4 + shadcn/ui |
+| Charts | Recharts 3 |
+| Images | sharp (resize + thumbnails on upload) |
+| Validation | Zod 4 (form inputs and Server Actions) |
+| Unit / integration tests | Vitest (+ Testing Library, Testcontainers) |
+| End-to-end tests | Playwright (critical flows only) |
+| Deployment | Docker (Next.js `standalone` image, multi-stage build) |
 
-Ne pas ajouter de dépendance sans raison claire ; préférer ce que la stack fournit déjà.
+Use **pnpm only**: never `npm` or `yarn`. Do not add a dependency without a clear
+reason; prefer what the stack already provides.
 
-## Principes obligatoires
+## Mandatory principles
 
-Ces trois principes s'appliquent à **chaque** changement, sans exception.
+These three principles apply to **every** change, without exception.
 
-### TDD — Test Driven Development
+### TDD — Test-Driven Development
 
-1. **Red** : écrire d'abord un test qui échoue et qui décrit le comportement attendu.
-2. **Green** : écrire le minimum de code pour le faire passer.
-3. **Refactor** : nettoyer en gardant les tests verts.
+1. **Red**: first write a failing test that describes the expected behavior.
+2. **Green**: write the minimum code to make it pass.
+3. **Refactor**: clean up while keeping tests green.
 
-- Aucun code de production sans test qui l'exige au préalable.
-- Pour un bug : écrire d'abord le test qui reproduit le bug, puis corriger.
-- Logique métier (`src/domain/`) : tests unitaires purs, sans base ni réseau.
-- Accès aux données et Server Actions : tests d'intégration contre une vraie base
-  PostgreSQL de test (pas de mock de Prisma).
-- Composants : tester le comportement visible par l'utilisateur (Testing Library),
-  pas les détails d'implémentation.
-- Playwright uniquement pour les parcours clés (enregistrer une course, ajouter un prix,
-  convertir une liste en course).
-- Un test = un comportement, nommé en phrase : `it("calcule le prix au kilo d'un produit de 500 g")`.
+- No production code without a test that requires it first.
+- For a bug: first write the test that reproduces it, then fix it.
+- Business logic (`src/domain/`): pure unit tests, no database or network.
+- Data access and Server Actions: integration tests against a real PostgreSQL test
+  database (no Prisma mocks).
+- Components: test user-visible behavior (Testing Library), not implementation details.
+- Async Server Components and key flows: Playwright (record a purchase, add a price,
+  convert a shopping list into a purchase).
+- One test = one behavior, named as a sentence:
+  `it("computes the price per kilo of a 500 g product")`.
 
 ### KISS — Keep It Simple, Stupid
 
-- La solution la plus simple qui satisfait le besoin actuel. Pas d'abstraction « au cas où » (YAGNI).
-- Server Components par défaut ; `"use client"` seulement quand l'interactivité l'exige.
-- Server Actions pour les mutations ; pas de couche API REST tant qu'aucun besoin réel n'existe.
-- Pas de state manager global : état serveur via le rendu serveur, état local via `useState`.
-- Fichiers courts et focalisés ; un fichier qui grossit est le signe qu'il fait trop de choses.
-- Pas de code mort, pas de code commenté, pas de TODO laissé sans ticket.
+- The simplest solution that meets the current need. No "just in case" abstraction (YAGNI).
+- Server Components by default; `"use client"` only where interactivity requires it.
+- Server Actions for mutations; no REST API layer until a real need exists.
+- No global state manager: server state via server rendering, local state via `useState`.
+- Short, focused files; a growing file is a sign it does too much.
+- No dead code, no commented-out code, no TODO without a ticket.
 
 ### SOLID
 
-- **S** — Responsabilité unique : un module = une raison de changer. La logique métier
-  ne connaît ni React, ni Prisma, ni Next.js.
-- **O** — Ouvert/fermé : étendre par composition (nouveaux composants, nouvelles fonctions)
-  plutôt que modifier du code stable avec des `if` en cascade.
-- **L** — Substitution de Liskov : une implémentation doit respecter le contrat de son
-  interface (types et comportement).
-- **I** — Ségrégation des interfaces : des types et props petits et ciblés plutôt qu'un
-  gros objet fourre-tout.
-- **D** — Inversion des dépendances : le domaine définit les interfaces dont il a besoin
-  (ex. dépôt de prix) ; l'infrastructure (Prisma, système de fichiers) les implémente.
+- **S** — Single responsibility: one module = one reason to change. Business logic
+  knows nothing about React, Prisma, or Next.js.
+- **O** — Open/closed: extend through composition (new components, new functions)
+  rather than modifying stable code with cascading `if`s.
+- **L** — Liskov substitution: an implementation must honor its interface contract
+  (types and behavior).
+- **I** — Interface segregation: small, focused types and props rather than one
+  catch-all object.
+- **D** — Dependency inversion: the domain defines the interfaces it needs (e.g. a price
+  repository); the infrastructure (Prisma, file system) implements them.
 
-Appliquer SOLID avec pragmatisme : il sert KISS, il ne justifie pas de sur-ingénierie.
+Apply SOLID pragmatically: it serves KISS, it never justifies over-engineering.
 
-## Architecture du code
+## Code architecture
 
 ```
 src/
-  app/            # Routes Next.js (pages, layouts, route handlers) — fines, sans logique métier
-  components/     # Composants UI réutilisables (ui/ = shadcn)
-  domain/         # Logique métier pure : prix unitaire, estimations, statistiques (100 % testée)
+  app/            # Next.js routes (pages, layouts, route handlers): thin, no business logic
+  components/     # Reusable UI components (ui/ = shadcn)
+  domain/         # Pure business logic: unit price, estimates, statistics (100% tested)
   server/
-    actions/      # Server Actions : validation Zod → appel domaine/dépôt → revalidation
-    repositories/ # Accès aux données via Prisma
-    storage/      # Stockage et traitement des photos (sharp, volume uploads)
-  lib/            # Utilitaires transverses (formatage monétaire, dates…)
+    actions/      # Server Actions: Zod validation → domain/repository call → revalidation
+    repositories/ # Data access through Prisma
+    storage/      # Photo storage and processing (sharp, uploads volume)
+  lib/            # Cross-cutting utilities (currency formatting, dates, env)
+  generated/      # Prisma client output (git-ignored)
 prisma/
   schema.prisma
   migrations/
@@ -90,51 +95,51 @@ tests/
   e2e/            # Playwright
 ```
 
-Règles de dépendance : `app` → `server` → `domain`. Le domaine ne dépend de rien d'autre
-que de lui-même. Les tests unitaires et d'intégration sont placés à côté du fichier testé
-(`foo.ts` + `foo.test.ts`).
+Dependency rule: `app` → `server` → `domain`. The domain depends on nothing but itself.
+Unit and integration tests sit next to the file under test (`foo.ts` + `foo.test.ts`).
 
-## Conventions de code
+## Code conventions
 
-- TypeScript `strict`, aucun `any` ; préférer `unknown` + validation Zod aux frontières.
-- Toute donnée entrante (formulaire, paramètre d'URL, fichier) est validée par Zod
-  avant d'atteindre le domaine.
-- Montants stockés en **centimes entiers** (`Int`), jamais en flottant. Formatage en
-  euros uniquement à l'affichage.
-- Contenance stockée en unité de base (`g`, `ml`, `piece`) pour permettre la comparaison
-  au kilo / au litre / à la pièce.
-- Nommage : `camelCase` (variables, fonctions), `PascalCase` (composants, types),
-  `kebab-case` (fichiers hors composants).
-- Mobile first : styles de base pour mobile, puis `md:` / `lg:` pour le PC. Cibles
-  tactiles d'au moins 44 px.
-- Accessibilité : labels sur tous les champs, contrastes suffisants, navigation clavier sur PC.
-- Messages d'erreur utilisateur en français, clairs et actionnables.
-- Migrations Prisma versionnées ; ne jamais modifier une migration déjà commitée.
+- TypeScript `strict`, no `any`; prefer `unknown` + Zod validation at boundaries.
+- All incoming data (form, URL parameter, file) is validated with Zod before it
+  reaches the domain.
+- Amounts are stored as **integer cents** (`Int`), never floats. Format as euros only
+  for display.
+- Product size is stored in a base unit (`g`, `ml`, `piece`) to allow comparison per
+  kilo / per litre / per piece.
+- Naming: `camelCase` (variables, functions), `PascalCase` (components, types),
+  `kebab-case` (non-component files).
+- Mobile first: base styles for phones, then `md:` / `lg:` for desktop. Touch targets
+  of at least 44 px.
+- Accessibility: labels on every field, sufficient contrast, keyboard navigation on desktop.
+- User-facing error messages in French, clear and actionable.
+- Versioned Prisma migrations; never edit a committed migration.
 
-## Commandes
+## Commands
 
-À maintenir à jour au fil de la mise en place du projet.
+Keep this section up to date as the project is set up.
 
 ```bash
-npm run dev          # serveur de développement
-npm test             # Vitest (unitaires + intégration)
-npm run test:e2e     # Playwright
-npm run lint         # ESLint
-npm run typecheck    # tsc --noEmit
-npx prisma migrate dev   # créer/appliquer une migration en local
-docker compose up -d --build   # lancer la stack complète
+pnpm install                 # install dependencies
+pnpm dev                     # development server
+pnpm test                    # Vitest (unit + integration + components)
+pnpm test:e2e                # Playwright
+pnpm lint                    # ESLint
+pnpm typecheck               # tsc --noEmit
+pnpm prisma migrate dev      # create/apply a migration locally
+docker compose up -d --build # run the full stack
 ```
 
-Avant chaque commit : `npm run lint && npm run typecheck && npm test` doivent passer.
+Before every commit: `pnpm lint && pnpm typecheck && pnpm test` must pass.
 
-## Git et commits
+## Git and commits
 
-- **Conventional Commits** obligatoires : `<type>(<scope>): <description>`
-  - Types : `feat`, `fix`, `refactor`, `test`, `docs`, `style`, `chore`, `build`, `ci`, `perf`.
-  - Scope facultatif, en minuscules : `feat(products): add price per unit comparison`.
-  - Description à l'impératif, en anglais, sans majuscule initiale ni point final.
-  - `BREAKING CHANGE:` en pied de message si nécessaire.
-- Commits petits et atomiques : un changement logique par commit, tests inclus.
-- **Aucune mention de Claude ou d'une IA** dans les commits ou les PR : pas de
-  `Co-Authored-By`, pas de « Generated with Claude Code », pas d'emoji robot.
-- Branche principale : `main`. Travail sur des branches `feat/…`, `fix/…`.
+- **Conventional Commits** are mandatory: `<type>(<scope>): <description>`
+  - Types: `feat`, `fix`, `refactor`, `test`, `docs`, `style`, `chore`, `build`, `ci`, `perf`.
+  - Optional lowercase scope: `feat(products): add price per unit comparison`.
+  - Imperative description, in English, no initial capital, no trailing period.
+  - `BREAKING CHANGE:` footer when needed.
+- Small, atomic commits: one logical change per commit, tests included.
+- **No mention of Claude or any AI** in commits or PRs: no `Co-Authored-By`, no
+  "Generated with Claude Code", no robot emoji.
+- Main branch: `main`. Work on `feat/…` and `fix/…` branches.
