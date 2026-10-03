@@ -10,3 +10,4 @@ playwright-report/
 test-results/
 src/generated/
 .superpowers/
+next-env.d.ts

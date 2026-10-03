@@ -1,5 +1,7 @@
 # CLAUDE.md — cabas
 
+Next.js agent rules: @AGENTS.md
+
 Self-hosted, mobile-first web app to record grocery purchases, track spending, compare
 product prices across stores, and prepare shopping lists with a cost estimate per store.
 
