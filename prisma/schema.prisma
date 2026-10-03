@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum SizeUnit {
+  G
+  ML
+  PIECE
+}
+
+enum PriceSource {
+  PURCHASE
+  MANUAL
+}
+
+model Store {
+  id        String             @id @default(uuid(7)) @db.Uuid
+  name      String
+  /// Lower-cased, trimmed, single-spaced name: enforces case-insensitive uniqueness.
+  nameKey   String             @unique @map("name_key")
+  address   String?
+  logoPath  String?            @map("logo_path")
+  createdAt DateTime           @default(now()) @map("created_at")
+  updatedAt DateTime           @updatedAt @map("updated_at")
+  prices    PriceObservation[]
+
+  @@map("stores")
+}
+
+model Product {
+  id             String               @id @default(uuid(7)) @db.Uuid
+  name           String
+  brand          String?
+  photoPath      String?              @map("photo_path")
+  sizeValue      Int                  @map("size_value")
+  sizeUnit       SizeUnit             @map("size_unit")
+  createdAt      DateTime             @default(now()) @map("created_at")
+  updatedAt      DateTime             @updatedAt @map("updated_at")
+  prices         PriceObservation[]
+  alternativesAs ProductAlternative[] @relation("AlternativeA")
+  alternativesBs ProductAlternative[] @relation("AlternativeB")
+
+  @@index([name])
+  @@map("products")
+}
+
+model PriceObservation {
+  id             String      @id @default(uuid(7)) @db.Uuid
+  productId      String      @map("product_id") @db.Uuid
+  storeId        String      @map("store_id") @db.Uuid
+  priceCents     Int         @map("price_cents")
+  observedAt     DateTime    @map("observed_at") @db.Date
+  source         PriceSource
+  /// Linked to a purchase line in Plan 2 (foreign key added there).
+  purchaseItemId String?     @unique @map("purchase_item_id") @db.Uuid
+  createdAt      DateTime    @default(now()) @map("created_at")
+  updatedAt      DateTime    @updatedAt @map("updated_at")
+  product        Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  store          Store       @relation(fields: [storeId], references: [id], onDelete: Restrict)
+
+  @@index([productId, storeId, observedAt])
+  @@index([storeId])
+  @@map("price_observations")
+}
+
+model ProductAlternative {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  /// Always the smaller of the two product IDs, so a pair is stored once.
+  productAId String   @map("product_a_id") @db.Uuid
+  productBId String   @map("product_b_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+  productA   Product  @relation("AlternativeA", fields: [productAId], references: [id], onDelete: Cascade)
+  productB   Product  @relation("AlternativeB", fields: [productBId], references: [id], onDelete: Cascade)
+
+  @@unique([productAId, productBId])
+  @@index([productBId])
+  @@map("product_alternatives")
+}
