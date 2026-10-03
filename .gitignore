@@ -9,3 +9,4 @@ uploads/
 playwright-report/
 test-results/
 src/generated/
+.superpowers/

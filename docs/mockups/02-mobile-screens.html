@@ -1,0 +1,212 @@
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=JetBrains+Mono:wght@500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  .grid { display:flex; gap:26px; flex-wrap:wrap; justify-content:center; margin-top:14px; }
+  .shot { display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .shot h3 { margin:0; font-size:15px; }
+  .shot p.desc { max-width:290px; text-align:center; margin:0; font-size:13px; opacity:.8; }
+  .phone { --bg:#FBF7F0; --fg:#1C1917; --card:#FFFDF8; --border:#E9E0D2; --muted:#78716C; --primary:#C2410C; --on-primary:#fff;
+           --accent:#166534; --best-bg:#F0FDF4; --photo:repeating-linear-gradient(45deg,#F5EBDD 0 8px,#EFE3D1 8px 16px); --radius:6px;
+           width:290px; height:600px; border-radius:34px; border:8px solid #111; overflow:hidden; position:relative;
+           background:var(--bg); color:var(--fg); font-family:'Inter',sans-serif; font-size:14px; box-shadow:0 10px 30px rgba(0,0,0,.18); }
+  .scr { height:100%; overflow:hidden; padding:14px 14px 80px; box-sizing:border-box; }
+  .mono { font-family:'JetBrains Mono',monospace; font-variant-numeric:tabular-nums; }
+  .serif { font-family:'Fraunces',serif; font-weight:700; }
+  h4.t { font-family:'Fraunces',serif; font-weight:700; font-size:22px; margin:2px 0 10px; }
+  .top { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+  .ib { width:36px; height:36px; border-radius:var(--radius); display:grid; place-items:center; background:var(--card); border:1px solid var(--border); }
+  .sec { font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.07em; color:var(--muted); margin:12px 0 6px; display:flex; justify-content:space-between; }
+  .card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); }
+  .row { display:flex; align-items:center; gap:10px; padding:9px 11px; border-bottom:1px dashed var(--border); }
+  .row:last-child { border-bottom:0; }
+  .logo { width:28px; height:28px; border-radius:6px; display:grid; place-items:center; font-size:11px; font-weight:700; color:#fff; flex-shrink:0; }
+  .grow { flex:1; min-width:0; }
+  .grow small { display:block; font-size:11px; color:var(--muted); }
+  .r { text-align:right; }
+  .r small { display:block; font-size:11px; color:var(--muted); }
+  .badge { display:inline-block; font-size:10px; font-weight:700; padding:2px 6px; border-radius:99px; background:var(--accent); color:#fff; }
+  .badge.warn { background:#F5E6D3; color:#7C2D12; }
+  .field { margin-bottom:9px; }
+  .field label { display:block; font-size:12px; font-weight:600; margin-bottom:4px; }
+  .input { height:44px; border:1px solid var(--border); background:var(--card); border-radius:var(--radius); display:flex; align-items:center; gap:8px; padding:0 10px; font-size:15px; }
+  .input.ph { color:var(--muted); }
+  .btn { height:46px; border-radius:var(--radius); background:var(--primary); color:#fff; font-weight:600; display:grid; place-items:center; font-size:15px; }
+  .btn.ghost { background:transparent; border:1.5px dashed var(--primary); color:var(--primary); }
+  .stepper { display:flex; align-items:center; border:1px solid var(--border); border-radius:var(--radius); height:32px; }
+  .stepper span { width:28px; text-align:center; font-weight:700; color:var(--primary); }
+  .stepper b { min-width:30px; text-align:center; font-family:'JetBrains Mono',monospace; font-size:13px; }
+  .nav { position:absolute; left:0; right:0; bottom:0; height:62px; background:var(--card); border-top:1px solid var(--border);
+         display:flex; align-items:center; justify-content:space-around; padding:0 4px; }
+  .nav div { display:flex; flex-direction:column; align-items:center; font-size:10px; gap:2px; color:var(--muted); width:50px; }
+  .nav div.on { color:var(--primary); font-weight:700; }
+  .nav .fab { width:48px; height:48px; border-radius:14px; background:var(--primary); color:#fff; justify-content:center; margin-top:-22px; box-shadow:0 6px 14px rgba(0,0,0,.18); }
+  .savebar { position:absolute; left:0; right:0; bottom:0; padding:10px 14px 14px; background:var(--card); border-top:1px solid var(--border); }
+  .pgrid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .pcard { padding:7px; }
+  .pcard .ph { aspect-ratio:1; border-radius:4px; background:var(--photo); margin-bottom:6px; }
+  .pcard b { display:block; font-size:12.5px; line-height:1.2; }
+  .pcard small { color:var(--muted); font-size:11px; }
+  .pcard .mono { font-size:12px; font-weight:700; color:var(--accent); }
+  .bars { display:flex; align-items:flex-end; gap:5px; height:90px; padding:8px 4px 0; }
+  .bars i { flex:1; background:#E9D5C0; border-radius:2px 2px 0 0; display:block; }
+  .bars i.on { background:var(--primary); }
+  .months { display:flex; gap:5px; padding:3px 4px 6px; font-size:8.5px; color:var(--muted); }
+  .months span { flex:1; text-align:center; }
+  .hbar { height:6px; background:#EFE3D1; border-radius:3px; margin-top:4px; overflow:hidden; }
+  .hbar i { display:block; height:100%; background:var(--primary); }
+  .receipt { position:relative; padding:10px 11px; margin-bottom:8px; }
+  .receipt:after { content:""; position:absolute; left:0; right:0; bottom:-6px; height:6px;
+                   background:radial-gradient(circle at 5px 0,transparent 4px,var(--card) 4.5px) 0 0/10px 6px repeat-x; }
+  .chk { width:20px; height:20px; border:1.5px solid var(--border); border-radius:4px; flex-shrink:0; display:grid; place-items:center; }
+  .chk.on { background:var(--accent); border-color:var(--accent); color:#fff; }
+  .done { text-decoration:line-through; color:var(--muted); }
+  .scrim { position:absolute; inset:0; background:rgba(28,25,23,.5); }
+  .sheet { position:absolute; left:0; right:0; bottom:0; background:var(--bg); border-radius:16px 16px 0 0; padding:8px 14px 14px; }
+  .grab { width:40px; height:4px; border-radius:2px; background:#D6CBBB; margin:0 auto 8px; }
+  .two { display:flex; gap:8px; }
+  .two > * { flex:1; }
+  svg { display:block; }
+</style>
+
+<h2>Section 3 — écrans en direction « Ticket de caisse »</h2>
+<p class="subtitle">Maquettes mobiles des écrans principaux (la fiche produit est celle de l'écran précédent). Dis-moi ce qui va et ce qui ne va pas, écran par écran.</p>
+
+<div class="grid">
+
+<!-- 1. Accueil -->
+<div class="shot"><h3>1 · Accueil (stats)</h3>
+<div class="phone"><div class="scr">
+  <div class="top"><div class="ib">‹</div><b class="serif" style="font-size:17px">Octobre 2026</b><div class="ib">›</div></div>
+  <div class="card" style="padding:12px">
+    <small style="color:var(--muted)">Dépensé ce mois</small>
+    <div class="mono" style="font-size:30px;font-weight:700;margin:2px 0">312,40 €</div>
+    <span class="badge warn">▲ 8 % vs septembre</span> <small style="color:var(--muted)">· 7 courses</small>
+  </div>
+  <div class="sec"><span>12 derniers mois</span></div>
+  <div class="card"><div class="bars"><i style="height:55%"></i><i style="height:62%"></i><i style="height:48%"></i><i style="height:70%"></i><i style="height:66%"></i><i style="height:58%"></i><i style="height:74%"></i><i style="height:61%"></i><i style="height:52%"></i><i style="height:69%"></i><i style="height:72%"></i><i class="on" style="height:78%"></i></div>
+  <div class="months"><span>N</span><span>D</span><span>J</span><span>F</span><span>M</span><span>A</span><span>M</span><span>J</span><span>J</span><span>A</span><span>S</span><span>O</span></div></div>
+  <div class="sec"><span>Top produits</span><span>par dépense</span></div>
+  <div class="card">
+    <div class="row"><span class="mono" style="color:var(--muted)">1</span><div class="grow">Lait demi-écrémé<small>12 × · Lidl</small></div><span class="mono">13,08 €</span></div>
+    <div class="row"><span class="mono" style="color:var(--muted)">2</span><div class="grow">Café moulu<small>3 × · Leclerc</small></div><span class="mono">11,85 €</span></div>
+  </div>
+  <div class="sec"><span>Par magasin</span></div>
+  <div class="card" style="padding:9px 11px">
+    <div style="display:flex;justify-content:space-between;font-size:13px"><span>Lidl</span><span class="mono">186,20 €</span></div><div class="hbar"><i style="width:60%"></i></div>
+  </div>
+</div>
+<div class="nav" data-on="0"></div></div>
+<p class="desc">Sélecteur de mois en haut, total en gros chiffres mono, tendance, top produits, répartition par magasin.</p></div>
+
+<!-- 2. Nouvelle course -->
+<div class="shot"><h3>2 · Nouvelle course</h3>
+<div class="phone"><div class="scr" style="padding-bottom:120px">
+  <div class="top"><div class="ib">✕</div><b class="serif" style="font-size:17px">Nouvelle course</b><span style="width:36px"></span></div>
+  <div class="two">
+    <div class="field"><label>Magasin</label><div class="input"><div class="logo" style="background:#0050AA;width:22px;height:22px">L</div>Lidl Lomme</div></div>
+    <div class="field" style="flex:.7"><label>Date</label><div class="input mono" style="font-size:13px">03/10</div></div>
+  </div>
+  <div class="sec"><span>Articles · 4</span><span class="mono">23,47 €</span></div>
+  <div class="card">
+    <div class="row"><div class="grow">Penne Rigate<small class="mono">0,99 € / u</small></div><div class="stepper"><span>−</span><b>2</b><span>+</span></div></div>
+    <div class="row"><div class="grow">Lait demi-écrémé<small class="mono">1,09 € / u</small></div><div class="stepper"><span>−</span><b>6</b><span>+</span></div></div>
+    <div class="row"><div class="grow">Pommes Gala<small class="mono">2,49 € / kg</small></div><div class="stepper"><span>−</span><b>1,2</b><span>+</span></div></div>
+    <div class="row"><div class="grow">Café moulu<small class="mono">3,95 € / u</small></div><div class="stepper"><span>−</span><b>1</b><span>+</span></div></div>
+  </div>
+  <div class="input ph" style="margin-top:8px">⌕ Ajouter un article…</div>
+  <div class="two" style="margin-top:10px">
+    <div class="field"><label>Total payé</label><div class="input mono">23,47 €</div></div>
+    <div class="field"><label>Ticket</label><div class="input" style="color:var(--primary);font-weight:600;font-size:13px">◉ Photo</div></div>
+  </div>
+</div>
+<div class="savebar"><div class="btn">Enregistrer la course</div></div></div>
+<p class="desc">Une seule page. Prix prérempli au dernier prix connu du magasin. Pas de barre de nav : bouton « Enregistrer » fixe en bas.</p></div>
+
+<!-- 3. Créer un produit (sheet) -->
+<div class="shot"><h3>3 · Créer un produit (panneau)</h3>
+<div class="phone"><div class="scr" style="opacity:.6">
+  <div class="top"><div class="ib">✕</div><b class="serif" style="font-size:17px">Nouvelle course</b><span style="width:36px"></span></div>
+  <div class="input">⌕ Riz basm</div>
+  <div class="card" style="margin-top:6px"><div class="row" style="color:var(--primary);font-weight:600">+ Créer « Riz basm »</div></div>
+</div>
+<div class="scrim"></div>
+<div class="sheet"><div class="grab"></div>
+  <b class="serif" style="font-size:18px">Nouveau produit</b>
+  <div style="display:flex;gap:10px;margin:10px 0">
+    <div style="width:74px;height:74px;border-radius:6px;background:var(--photo);display:grid;place-items:center;font-size:11px;color:var(--muted);text-align:center;border:1.5px dashed var(--border)">◉<br>Photo</div>
+    <div class="grow"><div class="field"><label>Nom</label><div class="input">Riz basmati</div></div></div>
+  </div>
+  <div class="field"><label>Marque <span style="font-weight:400;color:var(--muted)">(facultatif)</span></label><div class="input">Taureau Ailé</div></div>
+  <div class="two"><div class="field"><label>Contenance</label><div class="input mono">1000</div></div><div class="field"><label>Unité</label><div class="input">g ▾</div></div></div>
+  <div class="field"><label>Prix chez Lidl Lomme</label><div class="input mono">2,79 €</div></div>
+  <small style="color:var(--muted);display:block;margin:-2px 0 10px">= 2,79 €/kg</small>
+  <div class="btn">Créer et ajouter</div>
+</div></div>
+<p class="desc">Panneau du bas sur mobile (popup sur PC). Le prix au kilo est calculé en direct.</p></div>
+
+<!-- 4. Produits -->
+<div class="shot"><h3>4 · Produits</h3>
+<div class="phone"><div class="scr">
+  <h4 class="t">Produits</h4>
+  <div class="input ph">⌕ Rechercher un produit</div>
+  <div class="pgrid" style="margin-top:10px">
+    <div class="card pcard"><div class="ph"></div><b>Penne Rigate</b><small>Barilla · 500 g</small><div class="mono">dès 0,99 €</div></div>
+    <div class="card pcard"><div class="ph"></div><b>Lait demi-écrémé</b><small>Lactel · 1 L</small><div class="mono">dès 1,05 €</div></div>
+    <div class="card pcard"><div class="ph"></div><b>Café moulu</b><small>Carte Noire · 250 g</small><div class="mono">dès 3,79 €</div></div>
+    <div class="card pcard"><div class="ph"></div><b>Pommes Gala</b><small>Vrac · 1 kg</small><div class="mono">dès 2,19 €</div></div>
+  </div>
+</div>
+<div class="nav" data-on="3"></div></div>
+<p class="desc">Grille 2 colonnes (3–4 sur PC), recherche, meilleur prix connu en vert.</p></div>
+
+<!-- 5. Courses -->
+<div class="shot"><h3>5 · Historique des courses</h3>
+<div class="phone"><div class="scr">
+  <h4 class="t">Courses</h4>
+  <div class="sec"><span>Octobre 2026</span><span class="mono">312,40 €</span></div>
+  <div class="card receipt"><div style="display:flex;gap:10px;align-items:center"><div class="logo" style="background:#0050AA">L</div><div class="grow"><b>Lidl Lomme</b><small>Ven. 3 oct. · 14 articles</small></div><span class="mono" style="font-weight:700">48,62 €</span></div></div>
+  <div class="card receipt"><div style="display:flex;gap:10px;align-items:center"><div class="logo" style="background:#0066B3">E</div><div class="grow"><b>Leclerc Templeuve</b><small>Sam. 27 sept. · 31 articles</small></div><span class="mono" style="font-weight:700">112,30 €</span></div></div>
+  <div class="sec"><span>Septembre 2026</span><span class="mono">289,15 €</span></div>
+  <div class="card receipt"><div style="display:flex;gap:10px;align-items:center"><div class="logo" style="background:#E2001A">A</div><div class="grow"><b>Auchan V2</b><small>Mer. 24 sept. · 9 articles</small></div><span class="mono" style="font-weight:700">27,90 €</span></div></div>
+</div>
+<div class="nav" data-on="1"></div></div>
+<p class="desc">Groupées par mois avec total du mois. Cartes à bord dentelé façon ticket.</p></div>
+
+<!-- 6. Liste -->
+<div class="shot"><h3>6 · Liste de courses</h3>
+<div class="phone"><div class="scr" style="padding-bottom:120px">
+  <div class="top"><div class="ib">‹</div><span style="width:36px"></span></div>
+  <h4 class="t" style="margin-top:0">Courses de la semaine</h4>
+  <div class="sec"><span>Estimation</span></div>
+  <div class="card">
+    <div class="row" style="background:var(--best-bg)"><div class="logo" style="background:#0050AA">L</div><div class="grow">Lidl <span class="badge">Moins cher</span></div><span class="mono" style="font-weight:700">≈ 37,40 €</span></div>
+    <div class="row"><div class="logo" style="background:#E2001A">A</div><div class="grow">Auchan<small>2 produits sans prix</small></div><span class="mono">≈ 39,00 €</span></div>
+    <div class="row"><div class="logo" style="background:#0066B3">E</div><div class="grow">Leclerc</div><span class="mono">≈ 42,10 €</span></div>
+  </div>
+  <div class="sec"><span>Produits · 2/5</span></div>
+  <div class="card">
+    <div class="row"><div class="chk on">✓</div><div class="grow done">Penne Rigate</div><span class="mono">× 2</span></div>
+    <div class="row"><div class="chk on">✓</div><div class="grow done">Lait demi-écrémé</div><span class="mono">× 6</span></div>
+    <div class="row"><div class="chk"></div><div class="grow">Café moulu</div><span class="mono">× 1</span></div>
+  </div>
+</div>
+<div class="savebar"><div class="btn">Terminer → créer la course</div></div></div>
+<p class="desc">Estimation par magasin en haut, cases à cocher, bouton pour transformer en course.</p></div>
+
+</div>
+
+<script>
+  const icons = [
+    ['Accueil','<path d="M3 12l9-8 9 8v8a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/>'],
+    ['Courses','<path d="M6 2h12v20l-3-2-3 2-3-2-3 2zM9 7h6M9 11h6"/>'],
+    ['', '<path d="M12 5v14M5 12h14"/>'],
+    ['Produits','<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>'],
+    ['Listes','<path d="M9 6h11M9 12h11M9 18h11M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2"/>']
+  ];
+  document.querySelectorAll('.nav').forEach(nav => {
+    const on = +nav.dataset.on;
+    nav.innerHTML = icons.map(([l, p], i) => i === 2
+      ? `<div class="fab"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">${p}</svg></div>`
+      : `<div class="${i === on ? 'on' : ''}"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${p}</svg>${l}</div>`).join('');
+  });
+</script>
