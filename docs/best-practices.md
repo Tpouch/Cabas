@@ -182,7 +182,7 @@ Versions current as of October 2026.
   client filename. Save only the relative path in the database.
 - Serve them through a Route Handler that validates the path (no `..`) and sets
   `Cache-Control: public, max-age=31536000, immutable`, since names never change.
-- Render with `next/image` and `unoptimized`, because files are already optimized.
+- Render uploads with plain `<img>` (with `width`/`height` or an aspect-ratio box, and `loading="lazy"` below the fold), because files are already optimized.
 - Mobile capture: `<input type="file" accept="image/*" capture="environment">`.
 - Delete the files when the owning record is deleted.
 
