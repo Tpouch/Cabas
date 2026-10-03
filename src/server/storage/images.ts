@@ -13,6 +13,8 @@ const MAX_BYTES = 10 * 1024 * 1024;
 const ACCEPTED_FORMATS = new Set(["jpeg", "png", "webp"]);
 const MAX_EDGE: Record<ImageKind, number> = { stores: 800, products: 800, receipts: 1600 };
 const THUMB_EDGE = 300;
+/** Above any phone camera (48 MP) but blocks decompression bombs. */
+const MAX_PIXELS = 100_000_000;
 
 export class ImageRejectedError extends Error {}
 
@@ -29,10 +31,13 @@ export async function saveImage(file: File, kind: ImageKind): Promise<string> {
   if (!metadata?.format || !ACCEPTED_FORMATS.has(metadata.format)) {
     throw new ImageRejectedError("Ce fichier n'est pas une image JPEG, PNG ou WebP.");
   }
+  if ((metadata.width ?? 0) * (metadata.height ?? 0) > MAX_PIXELS) {
+    throw new ImageRejectedError("L'image est trop grande (100 mégapixels maximum).");
+  }
 
   const relativePath = `${kind}/${randomUUID()}.webp`;
   const resize = (edge: number) =>
-    sharp(input)
+    sharp(input, { limitInputPixels: MAX_PIXELS })
       .rotate()
       .resize({ width: edge, height: edge, fit: "inside", withoutEnlargement: true })
       .webp({ quality: 80 })

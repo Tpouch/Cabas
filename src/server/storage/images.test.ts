@@ -37,6 +37,13 @@ describe("saveImage", () => {
     await expect(saveImage(fake, "products")).rejects.toThrow(ImageRejectedError);
   });
 
+  it("rejects a small file that decodes to more than 100 megapixels", async () => {
+    const bomb = await sharp({ create: { width: 10_500, height: 10_000, channels: 3, background: "#fff" } }).png().toBuffer();
+    expect(bomb.byteLength).toBeLessThan(10 * 1024 * 1024);
+    const file = new File([new Uint8Array(bomb)], "bomb.png", { type: "image/png" });
+    await expect(saveImage(file, "products")).rejects.toThrow("trop grande");
+  });
+
   it("rejects a file over 10 MB", async () => {
     const big = new File([new Uint8Array(10 * 1024 * 1024 + 1)], "big.jpg", { type: "image/jpeg" });
     await expect(saveImage(big, "products")).rejects.toThrow("10 Mo");
