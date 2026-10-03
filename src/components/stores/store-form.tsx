@@ -1,8 +1,9 @@
 "use client";
 
-import { startTransition, useActionState, useEffect } from "react";
+import { FieldError } from "@/components/common/field-error";
 import { ImageField } from "@/components/common/image-field";
 import { SubmitButton } from "@/components/common/submit-button";
+import { useFormAction } from "@/components/common/use-form-action";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { ActionResult, ActionState } from "@/server/actions/result";
@@ -16,24 +17,10 @@ type Props = {
 };
 
 export function StoreForm({ action, store, defaultName, onDone }: Props) {
-  const [state, formAction, pending] = useActionState(action, null);
-  const errors = state && !state.ok ? state.errors : {};
+  const { state, errors, pending, onSubmit } = useFormAction(action, onDone);
 
-  useEffect(() => {
-    if (state?.ok) onDone(state.data);
-  }, [state, onDone]);
-
-  // Submitting through onSubmit (instead of `action=`) keeps typed values after a validation error.
   return (
-    <form
-      className="grid gap-4"
-      noValidate
-      onSubmit={(event) => {
-        event.preventDefault();
-        const data = new FormData(event.currentTarget);
-        startTransition(() => formAction(data));
-      }}
-    >
+    <form className="grid gap-4" noValidate onSubmit={onSubmit}>
       <div className="grid gap-1.5">
         <Label htmlFor="name">Nom</Label>
         <Input
@@ -45,11 +32,7 @@ export function StoreForm({ action, store, defaultName, onDone }: Props) {
           aria-describedby={errors.name ? "name-error" : undefined}
           autoFocus={Boolean(errors.name)}
         />
-        {errors.name && (
-          <p id="name-error" role="alert" className="text-sm text-destructive">
-            {errors.name[0]}
-          </p>
-        )}
+        <FieldError id="name-error" errors={errors.name} />
       </div>
       <div className="grid gap-1.5">
         <Label htmlFor="address">
