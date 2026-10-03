@@ -22,7 +22,7 @@ export type ProductInput = {
   photoPath: string | null;
 };
 
-const withPrices = {
+export const withPrices = {
   id: true,
   name: true,
   brand: true,
@@ -36,7 +36,7 @@ type Row = Omit<ProductSummary, "bestPriceCents"> & {
   prices: { storeId: string; priceCents: number; observedAt: Date; createdAt: Date }[];
 };
 
-function toSummary({ prices, ...product }: Row): ProductSummary {
+export function toSummary({ prices, ...product }: Row): ProductSummary {
   return { ...product, bestPriceCents: cheapestStorePrice(latestPricesByStore(prices))?.priceCents ?? null };
 }
 

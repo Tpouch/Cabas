@@ -2,14 +2,18 @@ import { ChevronLeft } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { AddAlternative } from "@/components/products/add-alternative";
 import { AddPriceButton } from "@/components/products/add-price-button";
+import { AlternativesCarousel } from "@/components/products/alternatives-carousel";
 import { PriceTable } from "@/components/products/price-table";
 import { ProductActions } from "@/components/products/product-actions";
+import { rankAlternatives } from "@/domain/alternatives";
 import { todayIso } from "@/lib/dates";
 import { formatSize } from "@/lib/format";
 import { uploadUrl } from "@/lib/uploads";
+import { listAlternatives } from "@/server/repositories/alternatives";
 import { listStorePrices } from "@/server/repositories/prices";
-import { getProduct } from "@/server/repositories/products";
+import { getProduct, listProducts } from "@/server/repositories/products";
 import { listStores } from "@/server/repositories/stores";
 
 type Props = { params: Promise<{ id: string }> };
@@ -21,8 +25,21 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ProductPage({ params }: Props) {
   const { id } = await params;
-  const [product, prices, stores] = await Promise.all([getProduct(id), listStorePrices(id), listStores()]);
+  const [product, prices, stores, alternatives, allProducts] = await Promise.all([
+    getProduct(id),
+    listStorePrices(id),
+    listStores(),
+    listAlternatives(id),
+    listProducts(),
+  ]);
   if (!product) notFound();
+  const byId = new Map(alternatives.map((alt) => [alt.id, alt]));
+  const ranked = rankAlternatives(product, alternatives).map((alt) => {
+    const source = byId.get(alt.id) as (typeof alternatives)[number];
+    return { ...alt, name: source.name, photoPath: source.photoPath };
+  });
+  const linkedIds = new Set([product.id, ...alternatives.map((alt) => alt.id)]);
+  const candidates = allProducts.filter((p) => !linkedIds.has(p.id));
   const now = new Date();
 
   return (
@@ -51,6 +68,11 @@ export default async function ProductPage({ params }: Props) {
           </h2>
           <PriceTable product={product} rows={prices} now={now} />
           <AddPriceButton product={product} stores={stores} today={todayIso(now)} />
+          <div className="mt-4 flex items-center justify-between">
+            <h2 className="font-sans text-xs font-semibold tracking-wider text-muted-foreground uppercase">Alternatives</h2>
+            <AddAlternative productId={product.id} candidates={candidates} />
+          </div>
+          <AlternativesCarousel productId={product.id} items={ranked} />
         </section>
       </div>
     </div>
