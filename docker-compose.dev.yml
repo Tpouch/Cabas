@@ -1,3 +1,4 @@
+name: cabas-dev
 services:
   db:
     image: postgres:18-alpine
@@ -11,3 +12,4 @@ services:
       - pgdata-dev:/var/lib/postgresql
 volumes:
   pgdata-dev:
+    name: cabas_pgdata-dev

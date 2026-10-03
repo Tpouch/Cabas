@@ -1,0 +1,12 @@
+node_modules
+.next
+.git
+.superpowers
+.claude
+uploads
+.env
+.env.*
+!.env.example
+test-results
+playwright-report
+src/generated
