@@ -88,3 +88,9 @@ describe("product actions", () => {
     await expect(stat(join(process.env.UPLOADS_DIR as string, created.data.photoPath))).rejects.toThrow();
   });
 });
+
+describe("malformed ids", () => {
+  it("treats a malformed id as not found", async () => {
+    expect(await getProduct("not-a-uuid")).toBeNull();
+  });
+});

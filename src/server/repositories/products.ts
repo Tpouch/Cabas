@@ -1,6 +1,7 @@
 import "server-only";
 import { cheapestStorePrice, latestPricesByStore } from "@/domain/latest-prices";
 import type { SizeUnit } from "@/domain/types";
+import { isUuid } from "@/lib/ids";
 import { db } from "@/server/db";
 
 export type ProductSummary = {
@@ -52,6 +53,7 @@ export async function listProducts(query?: string): Promise<ProductSummary[]> {
 }
 
 export async function getProduct(id: string): Promise<ProductSummary | null> {
+  if (!isUuid(id)) return null;
   const row = await db().product.findUnique({ where: { id }, select: withPrices });
   return row ? toSummary(row) : null;
 }
