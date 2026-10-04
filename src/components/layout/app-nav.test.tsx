@@ -23,6 +23,13 @@ describe("AppNav", () => {
     }
   });
 
+  it("shows the cabas logo as a link home in the sidebar", () => {
+    render(<AppNav />);
+    const home = screen.getByRole("link", { name: "cabas, accueil" });
+    expect(home).toHaveAttribute("href", "/");
+    expect(home.querySelector("svg")).not.toBeNull();
+  });
+
   it("offers a new purchase from the mobile bar and the sidebar", () => {
     render(<AppNav />);
     const links = screen.getAllByRole("link", { name: "Nouvelle course" });
