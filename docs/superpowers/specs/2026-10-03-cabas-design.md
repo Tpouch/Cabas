@@ -41,11 +41,13 @@ cabas is a self-hosted, mobile-first web app that lets a single user:
 - One password for the whole app, set at deployment. The server only stores its **scrypt
   hash** (`APP_PASSWORD_HASH`, generated with `pnpm hash-password`), never the password.
 - `/login`: the logo, one password field, "Se connecter". A wrong password shows
-  "Mot de passe incorrect." After **5 failed attempts within 15 minutes** from the same
-  client, login is refused for 15 minutes ("Trop d’essais…"). Passwords are compared in
-  constant time.
+  "Mot de passe incorrect." After **5 failed attempts within 15 minutes**, login is refused
+  for 15 minutes ("Trop d’essais…"). The limit is global: a direct connection carries no
+  client identity that cannot be forged (`X-Forwarded-For` is attacker-controlled).
+  Passwords are compared in constant time.
 - A successful login sets a **signed session cookie** (HMAC-SHA256 with `SESSION_SECRET`,
-  ≥ 32 characters) valid **30 days**: `HttpOnly`, `SameSite=Lax`, `Path=/`, and `Secure`
+  ≥ 32 characters) valid **30 days**, signed with a key derived from both `SESSION_SECRET` and the password
+  hash, so changing the password logs every device out: `HttpOnly`, `SameSite=Lax`, `Path=/`, and `Secure`
   only when `COOKIE_SECURE=true` (the app is served over plain HTTP inside the NetBird
   tunnel, which already encrypts traffic).
 - **Everything requires the session**: pages, `/uploads/*` images and every Server Action.
