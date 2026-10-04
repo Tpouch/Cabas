@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <style>
+    .handle { stroke: #1c1917; }
+    @media (prefers-color-scheme: dark) { .handle { stroke: #fbf7f0; } }
+  </style>
+  <path class="handle" d="M23 24v-6a9 9 0 0 1 18 0v6" fill="none" stroke-width="4.5" stroke-linecap="round"/>
+  <path d="M11 24h42l-4 30a4 4 0 0 1-4 3.5H19a4 4 0 0 1-4-3.5z" fill="#c2410c"/>
+  <path d="M38.5 35.5a7.5 7.5 0 1 0 0 9" fill="none" stroke="#fffdf8" stroke-width="4.5" stroke-linecap="round"/>
+</svg>

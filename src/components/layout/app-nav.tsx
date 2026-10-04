@@ -3,6 +3,7 @@
 import { Plus } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { LogoMark } from "@/components/brand/logo-mark";
 import { cn } from "@/lib/utils";
 import { hidesMobileBar, isActive, NAV_ITEMS, NEW_PURCHASE_HREF, type NavItem } from "./nav-items";
 
@@ -53,7 +54,8 @@ export function AppNav() {
       )}
 
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-60 flex-col gap-1 border-r bg-card px-3 py-4 lg:flex">
-        <Link href="/" className="px-2 pb-4 font-serif text-2xl font-bold">
+        <Link href="/" aria-label="cabas, accueil" className="flex items-center gap-2 px-2 pb-4 font-serif text-2xl font-bold">
+          <LogoMark className="size-8" />
           cabas
         </Link>
         <Link
