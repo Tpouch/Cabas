@@ -69,3 +69,28 @@ describe("store actions", () => {
     expect(await listStores()).toHaveLength(1);
   });
 });
+
+describe("store logo replacement and renaming", () => {
+  it("refuses to rename a store to an existing name", async () => {
+    await createStoreAction(null, form({ name: "Lidl Lomme" }));
+    const other = await createStoreAction(null, form({ name: "Auchan" }));
+    if (!other.ok) throw new Error("setup failed");
+    const result = await updateStoreAction(other.data.id, null, form({ name: "LIDL lomme", address: "" }));
+    expect(result).toMatchObject({ ok: false, errors: { name: ["Ce magasin existe déjà."] } });
+  });
+
+  it("keeps the new logo when the old one cannot be deleted", async () => {
+    const { mkdir, rm, stat } = await import("node:fs/promises");
+    const { join } = await import("node:path");
+    const created = await createStoreAction(null, form({ name: "Lidl", logo: await logo() }));
+    if (!created.ok || !created.data.logoPath) throw new Error("setup failed");
+    const oldFile = join(process.env.UPLOADS_DIR as string, created.data.logoPath);
+    await rm(oldFile);
+    await mkdir(oldFile);
+
+    const result = await updateStoreAction(created.data.id, null, form({ name: "Lidl", address: "", logo: await logo() }));
+    expect(result.ok).toBe(true);
+    if (!result.ok || !result.data.logoPath) return;
+    await expect(stat(join(process.env.UPLOADS_DIR as string, result.data.logoPath))).resolves.toBeTruthy();
+  });
+});

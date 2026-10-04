@@ -1,15 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { uploadUrl } from "@/lib/uploads";
 
-type Props = { name: string; label: string; currentPath?: string | null; errors?: string[]; capture?: boolean };
+type Props = { name: string; label: string; currentPath?: string | null; errors?: string[] };
 
-export function ImageField({ name, label, currentPath, errors, capture }: Props) {
+export function ImageField({ name, label, currentPath, errors }: Props) {
   const [preview, setPreview] = useState<string | null>(currentPath ? uploadUrl(currentPath, { thumb: true }) : null);
   const errorId = `${name}-error`;
+
+  // Free the previous blob preview whenever it is replaced, and on unmount.
+  useEffect(() => {
+    return () => {
+      if (preview?.startsWith("blob:")) URL.revokeObjectURL(preview);
+    };
+  }, [preview]);
 
   return (
     <div className="flex items-center gap-3">
@@ -23,7 +30,6 @@ export function ImageField({ name, label, currentPath, errors, capture }: Props)
           name={name}
           type="file"
           accept="image/jpeg,image/png,image/webp"
-          capture={capture ? "environment" : undefined}
           aria-invalid={errors ? true : undefined}
           aria-describedby={errors ? errorId : undefined}
           onChange={(event) => {

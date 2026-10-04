@@ -12,10 +12,17 @@ import { createStoreAction, deleteStoreAction, updateStoreAction } from "@/serve
 import type { StoreSummary } from "@/server/repositories/stores";
 import { StoreForm } from "./store-form";
 
-type Editing = { mode: "create" } | { mode: "edit"; store: StoreSummary } | null;
+type Editing = { mode: "create" } | { mode: "edit"; store: StoreSummary };
 
 export function StoreList({ stores }: { stores: StoreSummary[] }) {
-  const [editing, setEditing] = useState<Editing>(null);
+  const [open, setOpen] = useState(false);
+  // Kept after closing so the dialog keeps its title and form during the exit animation.
+  const [editing, setEditing] = useState<Editing>({ mode: "create" });
+
+  function openWith(next: Editing) {
+    setEditing(next);
+    setOpen(true);
+  }
 
   async function remove(store: StoreSummary) {
     if (!window.confirm(`Supprimer « ${store.name} » ?`)) return;
@@ -26,7 +33,7 @@ export function StoreList({ stores }: { stores: StoreSummary[] }) {
     <div className="grid gap-4">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl">Magasins</h1>
-        <Button onClick={() => setEditing({ mode: "create" })} className="h-11">
+        <Button onClick={() => openWith({ mode: "create" })} className="h-11">
           <Plus aria-hidden /> Nouveau magasin
         </Button>
       </div>
@@ -53,7 +60,7 @@ export function StoreList({ stores }: { stores: StoreSummary[] }) {
                 size="icon"
                 className="size-11"
                 aria-label={`Modifier ${store.name}`}
-                onClick={() => setEditing({ mode: "edit", store })}
+                onClick={() => openWith({ mode: "edit", store })}
               >
                 <Pencil aria-hidden />
               </Button>
@@ -72,21 +79,19 @@ export function StoreList({ stores }: { stores: StoreSummary[] }) {
       )}
 
       <ResponsiveDialog
-        open={editing !== null}
-        onOpenChange={(open) => !open && setEditing(null)}
-        title={editing?.mode === "edit" ? "Modifier le magasin" : "Nouveau magasin"}
+        open={open}
+        onOpenChange={setOpen}
+        title={editing.mode === "edit" ? "Modifier le magasin" : "Nouveau magasin"}
       >
-        {editing && (
-          <StoreForm
-            key={editing.mode === "edit" ? editing.store.id : "new"}
-            action={editing.mode === "edit" ? updateStoreAction.bind(null, editing.store.id) : createStoreAction}
-            store={editing.mode === "edit" ? editing.store : undefined}
-            onDone={() => {
-              toast.success("Magasin enregistré");
-              setEditing(null);
-            }}
-          />
-        )}
+        <StoreForm
+          key={editing.mode === "edit" ? editing.store.id : "new"}
+          action={editing.mode === "edit" ? updateStoreAction.bind(null, editing.store.id) : createStoreAction}
+          store={editing.mode === "edit" ? editing.store : undefined}
+          onDone={() => {
+            toast.success("Magasin enregistré");
+            setOpen(false);
+          }}
+        />
       </ResponsiveDialog>
     </div>
   );

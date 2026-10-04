@@ -1,5 +1,4 @@
 # syntax=docker/dockerfile:1
-ARG PRISMA_VERSION=7
 
 FROM node:24-alpine AS base
 RUN corepack enable
@@ -18,16 +17,18 @@ COPY . .
 ENV DATABASE_URL=postgresql://build:build@localhost:5432/build
 RUN pnpm prisma generate && pnpm build
 
-# Minimal toolchain to run `prisma migrate deploy` at container start.
+# Minimal toolchain to run `prisma migrate deploy` at container start, pinned to the
+# exact prisma and dotenv versions resolved by the app's lockfile.
 FROM base AS migrator
-ARG PRISMA_VERSION
 WORKDIR /opt/migrate
 COPY prisma ./prisma
 COPY prisma.config.ts pnpm-workspace.yaml package.json /tmp/app/
+COPY --from=deps /app/node_modules/prisma/package.json /tmp/versions/prisma.json
+COPY --from=deps /app/node_modules/dotenv/package.json /tmp/versions/dotenv.json
 # Reuse the app's pinned pnpm (corepack would otherwise fetch the latest major).
 RUN cp /tmp/app/prisma.config.ts /tmp/app/pnpm-workspace.yaml ./ \
   && node -e 'const p=require("/tmp/app/package.json");require("fs").writeFileSync("package.json",JSON.stringify({name:"cabas-migrate",private:true,packageManager:p.packageManager}))' \
-  && pnpm add "prisma@${PRISMA_VERSION}" dotenv
+  && pnpm add --save-exact "prisma@$(node -p 'require("/tmp/versions/prisma.json").version')" "dotenv@$(node -p 'require("/tmp/versions/dotenv.json").version')"
 
 FROM node:24-alpine AS runner
 WORKDIR /app

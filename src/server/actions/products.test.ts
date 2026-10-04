@@ -36,7 +36,9 @@ describe("product actions", () => {
   });
 
   it.each([
-    [{ sizeValue: "" }, "sizeValue", "La contenance doit être supérieure à 0."],
+    [{ sizeValue: "" }, "sizeValue", "Indique la contenance."],
+    [{ sizeValue: "1e3" }, "sizeValue", "Indique la contenance en chiffres."],
+    [{ sizeValue: "2000000" }, "sizeValue", "La contenance doit être inférieure à 1 000 000."],
     [{ sizeValue: "0" }, "sizeValue", "La contenance doit être supérieure à 0."],
     [{ sizeValue: "1,5" }, "sizeValue", "La contenance doit être un nombre entier (ex. 1500 pour 1,5 kg)."],
     [{ sizeValue: "abc" }, "sizeValue", "Indique la contenance en chiffres."],
@@ -92,5 +94,23 @@ describe("product actions", () => {
 describe("malformed ids", () => {
   it("treats a malformed id as not found", async () => {
     expect(await getProduct("not-a-uuid")).toBeNull();
+  });
+});
+
+describe("photo replacement", () => {
+  it("keeps the new photo when the old one cannot be deleted", async () => {
+    const { mkdir, rm } = await import("node:fs/promises");
+    const created = await createProductAction(null, form({ ...penne, photo: await photo() }));
+    if (!created.ok || !created.data.photoPath) throw new Error("setup failed");
+    // Make deleting the old file fail: replace it with a directory of the same name.
+    const oldFile = join(process.env.UPLOADS_DIR as string, created.data.photoPath);
+    await rm(oldFile);
+    await mkdir(oldFile);
+
+    const result = await updateProductAction(created.data.id, null, form({ ...penne, photo: await photo() }));
+    expect(result.ok).toBe(true);
+    if (!result.ok || !result.data.photoPath) return;
+    expect(result.data.photoPath).not.toBe(created.data.photoPath);
+    await expect(stat(join(process.env.UPLOADS_DIR as string, result.data.photoPath))).resolves.toBeTruthy();
   });
 });

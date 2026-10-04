@@ -9,7 +9,7 @@ import {
   type ProductSummary,
   updateProduct,
 } from "@/server/repositories/products";
-import { deleteImage, ImageRejectedError, saveImage } from "@/server/storage/images";
+import { deleteImage, discardImage, ImageRejectedError, saveImage } from "@/server/storage/images";
 import { optionalFile, text } from "./form-data";
 import { productInputSchema } from "./products.schema";
 import { type ActionResult, type ActionState, failure, invalid } from "./result";
@@ -63,16 +63,17 @@ export async function updateProductAction(
   if (!existing) return failure("Ce produit n'existe plus.");
   const photo = await savePhoto(formData);
   if ("error" in photo) return { ok: false, errors: { photo: [photo.error] } };
+  let product: ProductSummary;
   try {
-    const product = await updateProduct(id, { ...parsed.data, photoPath: photo.path ?? existing.photoPath });
-    if (photo.path) await deleteImage(existing.photoPath);
-    revalidatePath("/products");
-    revalidatePath(`/products/${id}`);
-    return { ok: true, data: product };
+    product = await updateProduct(id, { ...parsed.data, photoPath: photo.path ?? existing.photoPath });
   } catch (error) {
     await deleteImage(photo.path);
     throw error;
   }
+  if (photo.path) await discardImage(existing.photoPath);
+  revalidatePath("/products");
+  revalidatePath(`/products/${id}`);
+  return { ok: true, data: product };
 }
 
 export async function deleteProductAction(id: string): Promise<ActionResult<null>> {

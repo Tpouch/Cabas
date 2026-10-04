@@ -55,7 +55,7 @@ export function EntityCombobox({ id, name, label, options, value, onChange, onCr
             role="combobox"
             aria-expanded={open}
             aria-invalid={errors ? true : undefined}
-            aria-describedby={`${id}-error`}
+            aria-describedby={errors ? `${id}-error` : undefined}
             className="h-11 w-full justify-between bg-card px-3 text-base font-normal"
           >
             <span className={cn("truncate", !selected && "text-muted-foreground")}>{selected?.label ?? placeholder}</span>
