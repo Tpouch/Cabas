@@ -22,3 +22,8 @@ export function isValidSessionToken(token: string | undefined, key: string, nowM
   if (expected.length !== actual.length || !timingSafeEqual(expected, actual)) return false;
   return Number(expiry) > nowMs;
 }
+
+/** Ties sessions to the password: changing it invalidates every existing cookie. */
+export function sessionSigningKey(secret: string, passwordHash: string): string {
+  return `${secret}:${passwordHash}`;
+}
