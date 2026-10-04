@@ -36,7 +36,9 @@ describe("product actions", () => {
   });
 
   it.each([
-    [{ sizeValue: "" }, "sizeValue", "La contenance doit être supérieure à 0."],
+    [{ sizeValue: "" }, "sizeValue", "Indique la contenance."],
+    [{ sizeValue: "1e3" }, "sizeValue", "Indique la contenance en chiffres."],
+    [{ sizeValue: "2000000" }, "sizeValue", "La contenance doit être inférieure à 1 000 000."],
     [{ sizeValue: "0" }, "sizeValue", "La contenance doit être supérieure à 0."],
     [{ sizeValue: "1,5" }, "sizeValue", "La contenance doit être un nombre entier (ex. 1500 pour 1,5 kg)."],
     [{ sizeValue: "abc" }, "sizeValue", "Indique la contenance en chiffres."],

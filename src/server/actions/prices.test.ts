@@ -43,6 +43,8 @@ describe("addPriceAction", () => {
   it.each([
     [{ price: "abc" }, "price", "Indique un prix valide, par exemple 1,29."],
     [{ price: "0" }, "price", "Indique un prix valide, par exemple 1,29."],
+    [{ price: "100000" }, "price", "Le prix doit être inférieur à 100 000 €."],
+    [{ observedAt: "2999-01-01" }, "observedAt", "La date ne peut pas être dans le futur."],
     [{ storeId: "" }, "storeId", "Choisis un magasin."],
     [{ observedAt: "03/10/2026" }, "observedAt", "Indique une date valide."],
   ])("rejects %j", async (override, field, message) => {
