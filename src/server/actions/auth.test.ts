@@ -64,6 +64,18 @@ describe("loginAction", () => {
     await expect(loginAction(null, form({ password: "test-password", next: "/" }))).rejects.toThrow("NEXT_REDIRECT:/");
   });
 
+  it("stops all new logins after 50 failures from many addresses within 15 minutes", async () => {
+    cookieJar.clear();
+    for (let i = 0; i < 50; i += 1) {
+      requestHeaders.set("x-forwarded-for", `10.0.0.${i}`);
+      await loginAction(null, form({ password: "wrong" }));
+    }
+    requestHeaders.set("x-forwarded-for", "198.51.100.2");
+    const result = await loginAction(null, form({ password: "test-password" }));
+    expect(result).toMatchObject({ ok: false, message: expect.stringMatching(/^Trop d'essais/) });
+    expect(cookieJar.has(SESSION_COOKIE)).toBe(false);
+  });
+
   it("explains a missing server configuration instead of crashing", async () => {
     const secret = process.env.SESSION_SECRET;
     delete process.env.SESSION_SECRET;
