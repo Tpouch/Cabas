@@ -14,7 +14,7 @@ process.env.COOKIE_SECURE = "false";
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 vi.mock("next/headers", async () => {
-  const { cookieJar } = await import("./cookie-jar");
+  const { cookieJar, requestHeaders } = await import("./cookie-jar");
   return {
     cookies: async () => ({
       get: (name: string) => (cookieJar.has(name) ? { name, value: cookieJar.get(name)?.value } : undefined),
@@ -25,12 +25,12 @@ vi.mock("next/headers", async () => {
         cookieJar.delete(name);
       },
     }),
-    headers: async () => new Headers(),
+    headers: async () => requestHeaders,
   };
 });
 
 const { db } = await import("@/server/db");
-const { cookieJar } = await import("./cookie-jar");
+const { cookieJar, requestHeaders } = await import("./cookie-jar");
 const { createSessionToken, sessionSigningKey, SESSION_COOKIE } = await import("@/lib/auth/session-token");
 const { loginLimiter } = await import("@/server/auth/login-limiter");
 
@@ -40,6 +40,8 @@ beforeEach(async () => {
   const key = sessionSigningKey(process.env.SESSION_SECRET as string, process.env.APP_PASSWORD_HASH as string);
   cookieJar.set(SESSION_COOKIE, { value: createSessionToken(Date.now() + 3_600_000, key), options: {} });
   loginLimiter.reset();
+  for (const name of [...requestHeaders.keys()]) requestHeaders.delete(name);
+  requestHeaders.set("x-forwarded-for", "203.0.113.7");
   await db().$executeRawUnsafe(`
     DO $$ DECLARE t record; BEGIN
       FOR t IN SELECT tablename FROM pg_tables

@@ -1,0 +1,8 @@
+# Local test of the production stack without Coolify (plain HTTP on this machine only):
+#   docker compose -f docker-compose.yml -f docker-compose.local.yml --env-file .env up -d --build
+services:
+  app:
+    ports:
+      - "127.0.0.1:${APP_PORT:-3000}:${APP_PORT:-3000}"
+    environment:
+      COOKIE_SECURE: "false"

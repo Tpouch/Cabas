@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { hashPassword } from "@/lib/auth/password";
 import { SESSION_COOKIE } from "@/lib/auth/session-token";
 import { hasSession, requireSession, UnauthorizedError } from "@/server/auth/session";
-import { cookieJar } from "../../../tests/setup/cookie-jar";
+import { cookieJar, requestHeaders } from "../../../tests/setup/cookie-jar";
 import { loginAction, logoutAction } from "./auth";
 
 vi.mock("next/navigation", () => ({
@@ -54,6 +54,25 @@ describe("loginAction", () => {
     for (let i = 0; i < 5; i += 1) await loginAction(null, form({ password: "wrong" }));
     const result = await loginAction(null, form({ password: "test-password" }));
     expect(result).toMatchObject({ ok: false, message: expect.stringMatching(/^Trop d'essais\. Réessaie dans 15 min\.$/) });
+    expect(cookieJar.has(SESSION_COOKIE)).toBe(false);
+  });
+
+  it("keeps blocking per address: another device can still log in", async () => {
+    cookieJar.clear();
+    for (let i = 0; i < 5; i += 1) await loginAction(null, form({ password: "wrong" }));
+    requestHeaders.set("x-forwarded-for", "198.51.100.2");
+    await expect(loginAction(null, form({ password: "test-password", next: "/" }))).rejects.toThrow("NEXT_REDIRECT:/");
+  });
+
+  it("stops all new logins after 50 failures from many addresses within 15 minutes", async () => {
+    cookieJar.clear();
+    for (let i = 0; i < 50; i += 1) {
+      requestHeaders.set("x-forwarded-for", `10.0.0.${i}`);
+      await loginAction(null, form({ password: "wrong" }));
+    }
+    requestHeaders.set("x-forwarded-for", "198.51.100.2");
+    const result = await loginAction(null, form({ password: "test-password" }));
+    expect(result).toMatchObject({ ok: false, message: expect.stringMatching(/^Trop d'essais/) });
     expect(cookieJar.has(SESSION_COOKIE)).toBe(false);
   });
 

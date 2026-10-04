@@ -28,9 +28,10 @@ cabas is a self-hosted, mobile-first web app that lets a single user:
 
 ## 2. Users, access and constraints
 
-- **Single user**, no accounts. The app is reachable only through the user's **NetBird**
-  network, and every page is additionally protected by a **single password** (§2.1).
-- **Self-hosted** on the user's homelab with `docker compose`.
+- **Single user**, no accounts. Every page is protected by a **single password** (§2.1).
+- **Self-hosted** on the user's homelab, deployed with **Coolify** (Docker Compose build
+  pack) and served over **HTTPS** on a domain by Coolify's reverse proxy. The app publishes
+  no host port: the proxy is the only way in (amended 2026-10-04: NetBird is no longer used).
 - **UI language:** French (`fr-FR`), currency **EUR**, timezone **Europe/Paris** for all
   date grouping. **Code and documentation:** English.
 - **Mobile first**, fully usable on desktop. Installable to the home screen (PWA manifest),
@@ -41,15 +42,16 @@ cabas is a self-hosted, mobile-first web app that lets a single user:
 - One password for the whole app, set at deployment. The server only stores its **scrypt
   hash** (`APP_PASSWORD_HASH`, generated with `pnpm hash-password`), never the password.
 - `/login`: the logo, one password field, "Se connecter". A wrong password shows
-  "Mot de passe incorrect." After **5 failed attempts within 15 minutes**, login is refused
-  for 15 minutes ("Trop d’essais…"). The limit is global: a direct connection carries no
-  client identity that cannot be forged (`X-Forwarded-For` is attacker-controlled).
-  Passwords are compared in constant time.
+  "Mot de passe incorrect." After **5 failed attempts within 15 minutes from one address**,
+  that address is refused for the rest of the window ("Trop d’essais…"); after **50 failures
+  within 15 minutes across all addresses**, every new login is refused for the rest of that
+  window. The client address is the last `X-Forwarded-For` entry, appended by the proxy (not
+  forgeable as long as the app is only reachable through the proxy). Passwords are compared
+  in constant time and must be at least 12 characters.
 - A successful login sets a **signed session cookie** (HMAC-SHA256 with `SESSION_SECRET`,
   ≥ 32 characters) valid **30 days**, signed with a key derived from both `SESSION_SECRET` and the password
   hash, so changing the password logs every device out: `HttpOnly`, `SameSite=Lax`, `Path=/`, and `Secure`
-  only when `COOKIE_SECURE=true` (the app is served over plain HTTP inside the NetBird
-  tunnel, which already encrypts traffic).
+  (`COOKIE_SECURE`, true by default; false only for a local plain-HTTP test).
 - **Everything requires the session**: pages, `/uploads/*` images and every Server Action.
   The Next.js proxy redirects unauthenticated page requests to `/login?next=<path>` and
   answers other requests with 401; each Server Action and Route Handler also checks the
@@ -80,7 +82,8 @@ See `CLAUDE.md` and `docs/best-practices.md` for versions and conventions.
 - `docker-compose.yml` with two services:
   - `app`: multi-stage image built from the Next.js `standalone` output on `node:24-alpine`,
     running as the non-root `node` user. The entrypoint runs `prisma migrate deploy`, then
-    `node server.js`. It publishes one port (configurable, default `3000`).
+    `node server.js`. It listens on `APP_PORT` (default `3000`) inside the Compose network and
+    publishes no host port; Coolify's proxy routes the domain to it.
   - `db`: `postgres:18-alpine`, not published on the host, with a `pg_isready` healthcheck.
     `app` waits for `db` to be healthy.
 - Named volumes: `pgdata` (mounted at `/var/lib/postgresql`) and `uploads` (mounted at

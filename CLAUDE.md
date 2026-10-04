@@ -5,8 +5,8 @@ Next.js agent rules: @AGENTS.md
 Self-hosted, mobile-first web app to record grocery purchases, track spending, compare
 product prices across stores, and prepare shopping lists with a cost estimate per store.
 
-- Single user, no authentication: access is restricted to the NetBird network.
-- Hosting: homelab, via `docker compose` (services `app` + `db`).
+- Single user behind one password (spec §2.1), served over HTTPS by Coolify's proxy.
+- Hosting: homelab, deployed with Coolify's Docker Compose build pack (services `app` + `db`).
 - UI language: French. Code language (identifiers, file names): English.
 - **All documentation is written in English** (this file, README, specs, plans, code comments).
 - Specs and plans live in `docs/superpowers/specs/` and `docs/superpowers/plans/`.
