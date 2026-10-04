@@ -130,6 +130,7 @@ pnpm lint                    # ESLint
 pnpm typecheck               # tsc --noEmit
 pnpm prisma migrate dev      # create/apply a migration locally
 docker compose up -d --build # run the full stack
+pnpm hash-password           # generate APP_PASSWORD_HASH for .env
 ```
 
 Before every commit: `pnpm lint && pnpm typecheck && pnpm test` must pass.

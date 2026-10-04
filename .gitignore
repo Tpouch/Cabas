@@ -13,3 +13,4 @@ src/generated/
 next-env.d.ts
 !.env.example
 *.tsbuildinfo
+tests/e2e/.auth/
