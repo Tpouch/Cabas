@@ -32,7 +32,7 @@ export function PriceForm({ product, stores: initialStores, action, createStore,
   const [observedAt, setObservedAt] = useState(today);
   const [newStoreName, setNewStoreName] = useState<string | null>(null);
   const done = useCallback(() => onDone(), [onDone]);
-  const { errors, pending, onSubmit } = useFormAction(action, done);
+  const { errors, pending, onSubmit, formRef } = useFormAction(action, done);
   const cents = parseEuros(price);
 
   const storeCreated = useCallback((store: StoreSummary) => {
@@ -53,7 +53,7 @@ export function PriceForm({ product, stores: initialStores, action, createStore,
   }
 
   return (
-    <form className="grid gap-4" noValidate onSubmit={onSubmit}>
+    <form ref={formRef} className="grid gap-4" noValidate onSubmit={onSubmit}>
       <EntityCombobox
         id="storeId"
         name="storeId"
@@ -80,7 +80,7 @@ export function PriceForm({ product, stores: initialStores, action, createStore,
             value={price}
             onChange={(e) => setPrice(e.target.value)}
             aria-invalid={errors.price ? true : undefined}
-            aria-describedby="price-error"
+            aria-describedby={errors.price ? "price-error" : undefined}
           />
           <p data-testid="per-measure" className="text-xs text-muted-foreground">
             {cents ? `= ${formatPerMeasure(cents, product.sizeValue, product.sizeUnit)}` : " "}
@@ -97,7 +97,7 @@ export function PriceForm({ product, stores: initialStores, action, createStore,
             max={today}
             onChange={(e) => setObservedAt(e.target.value)}
             aria-invalid={errors.observedAt ? true : undefined}
-            aria-describedby="observedAt-error"
+            aria-describedby={errors.observedAt ? "observedAt-error" : undefined}
           />
         </div>
       </div>

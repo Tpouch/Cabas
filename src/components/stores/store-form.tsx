@@ -17,10 +17,10 @@ type Props = {
 };
 
 export function StoreForm({ action, store, defaultName, onDone }: Props) {
-  const { state, errors, pending, onSubmit } = useFormAction(action, onDone);
+  const { state, errors, pending, onSubmit, formRef } = useFormAction(action, onDone);
 
   return (
-    <form className="grid gap-4" noValidate onSubmit={onSubmit}>
+    <form ref={formRef} className="grid gap-4" noValidate onSubmit={onSubmit}>
       <div className="grid gap-1.5">
         <Label htmlFor="name">Nom</Label>
         <Input
@@ -30,7 +30,6 @@ export function StoreForm({ action, store, defaultName, onDone }: Props) {
           autoComplete="off"
           aria-invalid={errors.name ? true : undefined}
           aria-describedby={errors.name ? "name-error" : undefined}
-          autoFocus={Boolean(errors.name)}
         />
         <FieldError id="name-error" errors={errors.name} />
       </div>

@@ -11,6 +11,7 @@ export function useFormAction<T>(action: FormAction<T>, onDone: (data: T) => voi
   const errors: FieldErrors = state && !state.ok ? state.errors : {};
   const onDoneRef = useRef(onDone);
   const handled = useRef<ActionState<T>>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     onDoneRef.current = onDone;
@@ -22,6 +23,9 @@ export function useFormAction<T>(action: FormAction<T>, onDone: (data: T) => voi
       handled.current = state;
       onDoneRef.current(state.data);
     }
+    if (state && !state.ok) {
+      formRef.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+    }
   }, [state]);
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -30,5 +34,5 @@ export function useFormAction<T>(action: FormAction<T>, onDone: (data: T) => voi
     startTransition(() => formAction(data));
   }
 
-  return { state, errors, pending, onSubmit };
+  return { state, errors, pending, onSubmit, formRef };
 }

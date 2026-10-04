@@ -20,11 +20,11 @@ const selectClass =
   "h-11 w-full rounded-md border border-input bg-card px-3 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 export function ProductForm({ action, product, defaultName, onDone }: Props) {
-  const { state, errors, pending, onSubmit } = useFormAction(action, onDone);
+  const { state, errors, pending, onSubmit, formRef } = useFormAction(action, onDone);
 
   return (
-    <form className="grid gap-4" noValidate onSubmit={onSubmit}>
-      <ImageField name="photo" label="Photo (facultatif)" currentPath={product?.photoPath} errors={errors.photo} capture />
+    <form ref={formRef} className="grid gap-4" noValidate onSubmit={onSubmit}>
+      <ImageField name="photo" label="Photo (facultatif)" currentPath={product?.photoPath} errors={errors.photo} />
       <div className="grid gap-1.5">
         <Label htmlFor="name">Nom</Label>
         <Input
@@ -33,7 +33,7 @@ export function ProductForm({ action, product, defaultName, onDone }: Props) {
           defaultValue={product?.name ?? defaultName}
           autoComplete="off"
           aria-invalid={errors.name ? true : undefined}
-          aria-describedby="name-error"
+          aria-describedby={errors.name ? "name-error" : undefined}
         />
         <FieldError id="name-error" errors={errors.name} />
       </div>
@@ -53,7 +53,7 @@ export function ProductForm({ action, product, defaultName, onDone }: Props) {
             className="font-mono"
             defaultValue={product?.sizeValue ?? ""}
             aria-invalid={errors.sizeValue ? true : undefined}
-            aria-describedby="sizeValue-error"
+            aria-describedby={errors.sizeValue || errors.sizeUnit ? "sizeValue-error" : "sizeValue-help"}
           />
         </div>
         <div className="grid gap-1.5">
@@ -73,7 +73,7 @@ export function ProductForm({ action, product, defaultName, onDone }: Props) {
         <div className="col-span-2 -mt-1">
           <FieldError id="sizeValue-error" errors={errors.sizeValue ?? errors.sizeUnit} />
           {!errors.sizeValue && !errors.sizeUnit && (
-            <p className="text-xs text-muted-foreground">En grammes, millilitres ou pièces : 1,5 kg = 1500 g.</p>
+            <p id="sizeValue-help" className="text-xs text-muted-foreground">En grammes, millilitres ou pièces : 1,5 kg = 1500 g.</p>
           )}
         </div>
       </div>

@@ -26,3 +26,29 @@ describe("ProductForm", () => {
     expect(screen.getByLabelText("Nom")).toHaveValue("Penne");
   });
 });
+
+describe("ProductForm accessibility", () => {
+  it("lets the user pick an existing photo instead of forcing the camera", () => {
+    render(<ProductForm action={vi.fn()} onDone={vi.fn()} />);
+    expect(screen.getByLabelText(/Photo/)).not.toHaveAttribute("capture");
+  });
+
+  it("only links error messages that are shown", () => {
+    render(<ProductForm action={vi.fn()} onDone={vi.fn()} />);
+    expect(screen.getByLabelText("Nom")).not.toHaveAttribute("aria-describedby");
+    expect(screen.getByLabelText("Contenance")).toHaveAttribute("aria-describedby", "sizeValue-help");
+  });
+
+  it("moves focus to the first invalid field after an error", async () => {
+    const action = vi.fn().mockResolvedValue({
+      ok: false,
+      errors: { sizeValue: ["Indique la contenance."] },
+    });
+    render(<ProductForm action={action} onDone={vi.fn()} />);
+    await userEvent.type(screen.getByLabelText("Nom"), "Penne");
+    await userEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
+    await screen.findByText("Indique la contenance.");
+    expect(screen.getByLabelText("Contenance")).toHaveFocus();
+    expect(screen.getByLabelText("Contenance")).toHaveAttribute("aria-describedby", "sizeValue-error");
+  });
+});
