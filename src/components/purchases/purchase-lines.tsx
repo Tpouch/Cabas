@@ -35,52 +35,54 @@ export function PurchaseLines({ lines, productsById, onChange, onRemove }: Props
         const price = parseEuros(line.unitPrice);
         const priceId = `price-${line.key}`;
         return (
-          <li
-            key={line.key}
-            className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-2 p-3 lg:grid-cols-[1fr_auto_8rem_6rem_auto]"
-          >
-            <div className="min-w-0">
-              <p className="truncate font-medium">{name}</p>
-              {product && (
-                <p className="text-xs text-muted-foreground">
-                  {[product.brand, formatSize(product.sizeValue, product.sizeUnit)].filter(Boolean).join(" · ")}
-                </p>
-              )}
+          <li key={line.key} className="grid gap-2 p-3">
+            <div className="flex items-start gap-2">
+              <div className="min-w-0 flex-1">
+                <p className="truncate font-medium">{name}</p>
+                {product && (
+                  <p className="text-xs text-muted-foreground">
+                    {[product.brand, formatSize(product.sizeValue, product.sizeUnit)].filter(Boolean).join(" · ")}
+                  </p>
+                )}
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="-mt-1.5 -mr-1.5 size-11 shrink-0"
+                aria-label={`Retirer ${name}`}
+                onClick={() => onRemove(line.key)}
+              >
+                <Trash2 aria-hidden />
+              </Button>
             </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="size-11 lg:order-last"
-              aria-label={`Retirer ${name}`}
-              onClick={() => onRemove(line.key)}
-            >
-              <Trash2 aria-hidden />
-            </Button>
-            <QuantityStepper
-              id={`quantity-${line.key}`}
-              label={`Quantité de ${name}`}
-              value={line.quantity}
-              onChange={(value) => onChange(line.key, { quantity: value })}
-            />
-            <div className="flex items-center gap-1.5">
-              <label htmlFor={priceId} className="sr-only">
-                {`Prix unitaire de ${name}`}
-              </label>
-              <Input
-                id={priceId}
-                inputMode="decimal"
-                placeholder="Prix"
-                className="font-mono"
-                value={line.unitPrice}
-                aria-invalid={price === null ? true : undefined}
-                onChange={(event) => onChange(line.key, { unitPrice: event.target.value })}
+            {/* Wraps the subtotal under the controls on narrow screens, keeps one row when there is room. */}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+              <QuantityStepper
+                id={`quantity-${line.key}`}
+                label={`Quantité de ${name}`}
+                value={line.quantity}
+                onChange={(value) => onChange(line.key, { quantity: value })}
               />
-              <span className="text-sm text-muted-foreground">€</span>
+              <div className="flex w-36 items-center gap-1.5">
+                <label htmlFor={priceId} className="sr-only">
+                  {`Prix unitaire de ${name}`}
+                </label>
+                <Input
+                  id={priceId}
+                  inputMode="decimal"
+                  placeholder="Prix"
+                  className="font-mono"
+                  value={line.unitPrice}
+                  aria-invalid={line.unitPrice.trim() !== "" && price === null ? true : undefined}
+                  onChange={(event) => onChange(line.key, { unitPrice: event.target.value })}
+                />
+                <span className="text-sm text-muted-foreground">€</span>
+              </div>
+              <p className="ml-auto font-mono font-bold">
+                {quantity !== null && price !== null ? formatEuros(lineSubtotal(quantity, price)) : "—"}
+              </p>
             </div>
-            <p className="col-span-2 text-right font-mono font-bold lg:col-span-1">
-              {quantity !== null && price !== null ? formatEuros(lineSubtotal(quantity, price)) : "—"}
-            </p>
           </li>
         );
       })}

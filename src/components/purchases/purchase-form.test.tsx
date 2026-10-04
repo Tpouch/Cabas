@@ -162,3 +162,17 @@ describe("PurchaseForm after saving", () => {
     expect(props.action).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("PurchaseForm price field", () => {
+  afterEach(() => window.localStorage.clear());
+
+  it("does not flag an empty price as an error, only an unreadable one", async () => {
+    renderForm();
+    await addPenne();
+    const price = screen.getByLabelText("Prix unitaire de Penne Rigate");
+    expect(price).toHaveValue("");
+    expect(price).not.toHaveAttribute("aria-invalid");
+    await userEvent.type(price, "abc");
+    expect(price).toHaveAttribute("aria-invalid", "true");
+  });
+});
