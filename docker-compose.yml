@@ -1,14 +1,14 @@
 # Deployed with Coolify's Docker Compose build pack: every ${VAR} below becomes a field in
 # Coolify, and ${VAR:?} fields must be filled before the first deployment. The app publishes
-# no host port: Coolify's proxy serves it over HTTPS on your domain (see README).
+# APP_PORT on the server; an HTTPS reverse proxy (Nginx Proxy Manager) forwards the domain to
+# <server LAN IP>:APP_PORT (see README).
 services:
   app:
     build: .
     image: cabas:latest
     restart: unless-stopped
     environment:
-      # Port the app listens on inside its container. Put it in the Coolify domain when it is
-      # not 3000, e.g. https://cabas.example.com:4000
+      # Port the app listens on, inside the container and on the server.
       PORT: ${APP_PORT:-3000}
       # Use a password without URL special characters (e.g. `openssl rand -hex 24`).
       DATABASE_URL: postgresql://${POSTGRES_USER:-cabas}:${POSTGRES_PASSWORD:?}@db:5432/${POSTGRES_DB:-cabas}
@@ -16,10 +16,12 @@ services:
       TZ: ${TZ:-Europe/Paris}
       APP_PASSWORD_HASH: ${APP_PASSWORD_HASH:?}
       SESSION_SECRET: ${SESSION_SECRET:?}
-      # true behind HTTPS (Coolify domain). false only for a local plain-HTTP test.
+      # true behind the HTTPS proxy. false only for a local plain-HTTP test.
       COOKIE_SECURE: ${COOKIE_SECURE:-true}
-    expose:
-      - "${APP_PORT:-3000}"
+    ports:
+      # APP_BIND (required): the server address the proxy connects to, e.g. its LAN IP. Allow this
+      # port only from the proxy (see README, "Firewall").
+      - "${APP_BIND:?set APP_BIND to the server address the proxy connects to}:${APP_PORT:-3000}:${APP_PORT:-3000}"
     volumes:
       - uploads:/data/uploads
     depends_on:
