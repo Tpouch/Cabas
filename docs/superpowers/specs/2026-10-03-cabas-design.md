@@ -28,13 +28,36 @@ cabas is a self-hosted, mobile-first web app that lets a single user:
 
 ## 2. Users, access and constraints
 
-- **Single user**, no accounts and no authentication. The app is reachable only through the
-  user's **NetBird** network; the network is the security boundary.
+- **Single user**, no accounts. The app is reachable only through the user's **NetBird**
+  network, and every page is additionally protected by a **single password** (§2.1).
 - **Self-hosted** on the user's homelab with `docker compose`.
 - **UI language:** French (`fr-FR`), currency **EUR**, timezone **Europe/Paris** for all
   date grouping. **Code and documentation:** English.
 - **Mobile first**, fully usable on desktop. Installable to the home screen (PWA manifest),
   **no offline mode**.
+
+### 2.1 Authentication (added 2026-10-04)
+
+- One password for the whole app, set at deployment. The server only stores its **scrypt
+  hash** (`APP_PASSWORD_HASH`, generated with `pnpm hash-password`), never the password.
+- `/login`: the logo, one password field, "Se connecter". A wrong password shows
+  "Mot de passe incorrect." After **5 failed attempts within 15 minutes** from the same
+  client, login is refused for 15 minutes ("Trop d’essais…"). Passwords are compared in
+  constant time.
+- A successful login sets a **signed session cookie** (HMAC-SHA256 with `SESSION_SECRET`,
+  ≥ 32 characters) valid **30 days**: `HttpOnly`, `SameSite=Lax`, `Path=/`, and `Secure`
+  only when `COOKIE_SECURE=true` (the app is served over plain HTTP inside the NetBird
+  tunnel, which already encrypts traffic).
+- **Everything requires the session**: pages, `/uploads/*` images and every Server Action.
+  The Next.js proxy redirects unauthenticated page requests to `/login?next=<path>` and
+  answers other requests with 401; each Server Action and Route Handler also checks the
+  session itself. Only `/login`, the favicon, the home screen icon and Next.js static assets
+  are public. After login the user returns to `next` (same-site paths only).
+- "Se déconnecter" (sidebar on desktop, home page on mobile) deletes the cookie and goes
+  back to `/login`.
+- Security headers on every response: `Content-Security-Policy` (self only, no framing),
+  `X-Content-Type-Options: nosniff`, `Referrer-Policy: same-origin`,
+  `Permissions-Policy` disabling unused features.
 
 ## 3. Stack and deployment
 
@@ -393,7 +416,7 @@ TDD as defined in `CLAUDE.md`: every behavior starts with a failing test.
 
 ## 10. Out of scope for v1
 
-- Authentication and multiple users.
+- Multiple users and accounts.
 - Offline mode and background sync.
 - Receipt OCR and barcode scanning.
 - Price history charts per product.
