@@ -28,6 +28,7 @@ model Store {
   createdAt DateTime           @default(now()) @map("created_at")
   updatedAt DateTime           @updatedAt @map("updated_at")
   prices    PriceObservation[]
+  purchases Purchase[]
 
   @@map("stores")
 }
@@ -42,6 +43,7 @@ model Product {
   createdAt      DateTime             @default(now()) @map("created_at")
   updatedAt      DateTime             @updatedAt @map("updated_at")
   prices         PriceObservation[]
+  purchaseItems  PurchaseItem[]
   alternativesAs ProductAlternative[] @relation("AlternativeA")
   alternativesBs ProductAlternative[] @relation("AlternativeB")
 
@@ -50,18 +52,19 @@ model Product {
 }
 
 model PriceObservation {
-  id             String      @id @default(uuid(7)) @db.Uuid
-  productId      String      @map("product_id") @db.Uuid
-  storeId        String      @map("store_id") @db.Uuid
-  priceCents     Int         @map("price_cents")
-  observedAt     DateTime    @map("observed_at") @db.Date
+  id             String        @id @default(uuid(7)) @db.Uuid
+  productId      String        @map("product_id") @db.Uuid
+  storeId        String        @map("store_id") @db.Uuid
+  priceCents     Int           @map("price_cents")
+  observedAt     DateTime      @map("observed_at") @db.Date
   source         PriceSource
-  /// Linked to a purchase line in Plan 2 (foreign key added there).
-  purchaseItemId String?     @unique @map("purchase_item_id") @db.Uuid
-  createdAt      DateTime    @default(now()) @map("created_at")
-  updatedAt      DateTime    @updatedAt @map("updated_at")
-  product        Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
-  store          Store       @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  /// Set when the price comes from a purchase line; deleted with it.
+  purchaseItemId String?       @unique @map("purchase_item_id") @db.Uuid
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+  product        Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  store          Store         @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  purchaseItem   PurchaseItem? @relation(fields: [purchaseItemId], references: [id], onDelete: Cascade)
 
   @@index([productId, storeId, observedAt])
   @@index([storeId])
@@ -81,4 +84,37 @@ model ProductAlternative {
   @@unique([productAId, productBId])
   @@index([productBId])
   @@map("product_alternatives")
+}
+
+model Purchase {
+  id          String         @id @default(uuid(7)) @db.Uuid
+  storeId     String         @map("store_id") @db.Uuid
+  purchasedAt DateTime       @map("purchased_at") @db.Date
+  totalCents  Int            @map("total_cents")
+  receiptPath String?        @map("receipt_path")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+  store       Store          @relation(fields: [storeId], references: [id], onDelete: Restrict)
+  items       PurchaseItem[]
+
+  @@index([purchasedAt])
+  @@index([storeId])
+  @@map("purchases")
+}
+
+model PurchaseItem {
+  id               String            @id @default(uuid(7)) @db.Uuid
+  purchaseId       String            @map("purchase_id") @db.Uuid
+  productId        String            @map("product_id") @db.Uuid
+  quantity         Decimal           @db.Decimal(10, 3)
+  unitPriceCents   Int               @map("unit_price_cents")
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime          @updatedAt @map("updated_at")
+  purchase         Purchase          @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  product          Product           @relation(fields: [productId], references: [id], onDelete: Restrict)
+  priceObservation PriceObservation?
+
+  @@index([purchaseId])
+  @@index([productId])
+  @@map("purchase_items")
 }
