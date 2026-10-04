@@ -147,3 +147,18 @@ describe("PurchaseForm", () => {
     }
   });
 });
+
+describe("PurchaseForm after saving", () => {
+  afterEach(() => window.localStorage.clear());
+
+  it("cannot be submitted a second time while the detail page loads", async () => {
+    const props = renderForm();
+    await chooseStore();
+    await addPenne();
+    await userEvent.click(screen.getByRole("button", { name: "Enregistrer la course" }));
+    await vi.waitFor(() => expect(push).toHaveBeenCalled());
+    expect(screen.getByRole("button", { name: "Enregistrer la course" })).toBeDisabled();
+    await userEvent.click(screen.getByRole("button", { name: "Enregistrer la course" }));
+    expect(props.action).toHaveBeenCalledTimes(1);
+  });
+});

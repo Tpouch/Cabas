@@ -24,3 +24,26 @@ describe("ReceiptField", () => {
     expect(screen.getByLabelText(/Photo du ticket/)).toHaveAttribute("aria-invalid", "true");
   });
 });
+
+describe("ReceiptField file choice", () => {
+  it("refuses a photo over 10 MB before sending it and leaves the field empty", async () => {
+    const { default: userEvent } = await import("@testing-library/user-event");
+    Object.assign(URL, { createObjectURL: vi.fn(() => "blob:big"), revokeObjectURL: vi.fn() });
+    render(<ReceiptField name="receipt" />);
+    const input = screen.getByLabelText(/Photo du ticket/) as HTMLInputElement;
+    await userEvent.upload(input, new File([new Uint8Array(10 * 1024 * 1024 + 1)], "big.jpg", { type: "image/jpeg" }));
+    expect(screen.getByRole("alert")).toHaveTextContent("L'image dépasse 10 Mo.");
+    expect(input.files?.length ?? 0).toBe(0);
+  });
+
+  it("lets the user remove the chosen photo", async () => {
+    const { default: userEvent } = await import("@testing-library/user-event");
+    Object.assign(URL, { createObjectURL: vi.fn(() => "blob:ok"), revokeObjectURL: vi.fn() });
+    render(<ReceiptField name="receipt" />);
+    const input = screen.getByLabelText(/Photo du ticket/) as HTMLInputElement;
+    await userEvent.upload(input, new File(["x"], "ticket.jpg", { type: "image/jpeg" }));
+    await userEvent.click(screen.getByRole("button", { name: "Retirer la photo" }));
+    expect(input.files?.length ?? 0).toBe(0);
+    expect(screen.queryByRole("img", { name: "Aperçu du ticket" })).not.toBeInTheDocument();
+  });
+});

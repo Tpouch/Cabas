@@ -1,19 +1,43 @@
 "use client";
 
-import { Camera } from "lucide-react";
+import { Camera, X } from "lucide-react";
 import { type DragEvent, useRef, useState } from "react";
 import { FieldError } from "@/components/common/field-error";
 import { useFilePreview } from "@/components/common/use-file-preview";
+import { Button } from "@/components/ui/button";
 import { uploadUrl } from "@/lib/uploads";
 import { cn } from "@/lib/utils";
 
 type Props = { name: string; currentPath?: string | null; errors?: string[] };
 
+const MAX_BYTES = 10 * 1024 * 1024;
+
 /** File picker that also accepts a dropped photo (desktop). Phones offer camera or gallery. */
 export function ReceiptField({ name, currentPath, errors }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
+  const [hasFile, setHasFile] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
   const { preview, showFile } = useFilePreview(currentPath ? uploadUrl(currentPath, { thumb: true }) : null);
+  const shownErrors = localError ? [localError] : errors;
+
+  function clear() {
+    if (inputRef.current) inputRef.current.value = "";
+    setHasFile(false);
+    showFile(undefined);
+  }
+
+  /** Checks the size here so a too-big photo never blocks the whole form on the server. */
+  function accept(file: File | undefined) {
+    if (file && file.size > MAX_BYTES) {
+      clear();
+      setLocalError("L'image dépasse 10 Mo.");
+      return;
+    }
+    setLocalError(null);
+    setHasFile(Boolean(file));
+    showFile(file);
+  }
 
   function onDrop(event: DragEvent<HTMLLabelElement>) {
     event.preventDefault();
@@ -21,7 +45,7 @@ export function ReceiptField({ name, currentPath, errors }: Props) {
     const files = event.dataTransfer.files;
     if (!inputRef.current || files.length === 0) return;
     inputRef.current.files = files;
-    showFile(files[0]);
+    accept(files[0]);
   }
 
   return (
@@ -37,7 +61,7 @@ export function ReceiptField({ name, currentPath, errors }: Props) {
         className={cn(
           "flex min-h-28 cursor-pointer items-center gap-3 rounded-md border border-dashed bg-secondary/50 p-3 text-sm text-muted-foreground",
           dragging && "border-primary bg-secondary",
-          errors && "border-destructive",
+          shownErrors && "border-destructive",
         )}
       >
         {preview ? (
@@ -57,11 +81,16 @@ export function ReceiptField({ name, currentPath, errors }: Props) {
         type="file"
         accept="image/jpeg,image/png,image/webp"
         className="sr-only"
-        aria-invalid={errors ? true : undefined}
-        aria-describedby={errors ? `${name}-error` : undefined}
-        onChange={(event) => showFile(event.currentTarget.files?.[0])}
+        aria-invalid={shownErrors ? true : undefined}
+        aria-describedby={shownErrors ? `${name}-error` : undefined}
+        onChange={(event) => accept(event.currentTarget.files?.[0])}
       />
-      <FieldError id={`${name}-error`} errors={errors} />
+      {hasFile && (
+        <Button type="button" variant="ghost" className="h-11 justify-self-start text-muted-foreground" onClick={clear}>
+          <X aria-hidden /> Retirer la photo
+        </Button>
+      )}
+      <FieldError id={`${name}-error`} errors={shownErrors} />
     </div>
   );
 }

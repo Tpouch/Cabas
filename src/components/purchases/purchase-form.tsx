@@ -277,7 +277,8 @@ function PurchaseEditor({
             </p>
           )}
           <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-card p-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] lg:static lg:border-0 lg:bg-transparent lg:p-0">
-            <SubmitButton pending={pending}>
+            {/* Stays disabled after a success: the detail page is still loading. */}
+            <SubmitButton pending={pending || state?.ok === true}>
               {mode === "create" ? "Enregistrer la course" : "Enregistrer les modifications"}
             </SubmitButton>
           </div>
