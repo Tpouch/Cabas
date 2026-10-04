@@ -30,6 +30,8 @@ export function useFormAction<T>(action: FormAction<T>, onDone: (data: T) => voi
 
   function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    // React events bubble through portals: keep a dialog form from submitting the page form.
+    event.stopPropagation();
     const data = new FormData(event.currentTarget);
     startTransition(() => formAction(data));
   }

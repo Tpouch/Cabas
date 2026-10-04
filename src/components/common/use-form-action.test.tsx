@@ -40,3 +40,25 @@ describe("useFormAction", () => {
     expect(spy).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("useFormAction inside another form", () => {
+  it("does not submit the surrounding form", async () => {
+    const { createPortal } = await import("react-dom");
+    const outer = vi.fn((event: { preventDefault: () => void }) => event.preventDefault());
+    function Inner() {
+      const { onSubmit } = useFormAction(async () => ({ ok: true as const, data: null }), () => {});
+      return (
+        <form onSubmit={onSubmit}>
+          <button type="submit">Créer le magasin</button>
+        </form>
+      );
+    }
+    render(
+      <form onSubmit={outer}>
+        {createPortal(<Inner />, document.body)}
+      </form>,
+    );
+    await userEvent.click(screen.getByRole("button", { name: "Créer le magasin" }));
+    expect(outer).not.toHaveBeenCalled();
+  });
+});

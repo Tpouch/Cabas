@@ -1,11 +1,15 @@
 "use client";
 
+import { useCallback, useRef, useState } from "react";
 import { FieldError } from "@/components/common/field-error";
 import { ImageField } from "@/components/common/image-field";
 import { SubmitButton } from "@/components/common/submit-button";
 import { useFormAction } from "@/components/common/use-form-action";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { parseEuros } from "@/domain/money";
+import type { SizeUnit } from "@/domain/types";
+import { formatPerMeasure } from "@/lib/format";
 import type { ActionResult, ActionState } from "@/server/actions/result";
 import type { ProductSummary } from "@/server/repositories/products";
 
@@ -13,14 +17,26 @@ type Props = {
   action: (prev: ActionState<ProductSummary>, formData: FormData) => Promise<ActionResult<ProductSummary>>;
   product?: ProductSummary;
   defaultName?: string;
-  onDone: (product: ProductSummary) => void;
+  /** Shown when the product is created from a purchase: its price in that store. */
+  priceLabel?: string;
+  onDone: (product: ProductSummary, priceCents: number | null) => void;
 };
 
 const selectClass =
   "h-11 w-full rounded-md border border-input bg-card px-3 text-base focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
-export function ProductForm({ action, product, defaultName, onDone }: Props) {
-  const { state, errors, pending, onSubmit, formRef } = useFormAction(action, onDone);
+export function ProductForm({ action, product, defaultName, priceLabel, onDone }: Props) {
+  const [sizeValue, setSizeValue] = useState(product?.sizeValue ? String(product.sizeValue) : "");
+  const [sizeUnit, setSizeUnit] = useState<SizeUnit>(product?.sizeUnit ?? "G");
+  const [price, setPrice] = useState("");
+  const priceRef = useRef<number | null>(null);
+  const done = useCallback((saved: ProductSummary) => onDone(saved, priceRef.current), [onDone]);
+  const { state, errors, pending, onSubmit, formRef } = useFormAction(action, done);
+
+  const priceCents = parseEuros(price);
+  const size = Number(sizeValue);
+  const perMeasure =
+    priceCents && Number.isInteger(size) && size > 0 ? `= ${formatPerMeasure(priceCents, size, sizeUnit)}` : " ";
 
   return (
     <form ref={formRef} className="grid gap-4" noValidate onSubmit={onSubmit}>
@@ -51,7 +67,8 @@ export function ProductForm({ action, product, defaultName, onDone }: Props) {
             name="sizeValue"
             inputMode="numeric"
             className="font-mono"
-            defaultValue={product?.sizeValue ?? ""}
+            value={sizeValue}
+            onChange={(event) => setSizeValue(event.target.value)}
             aria-invalid={errors.sizeValue ? true : undefined}
             aria-describedby={errors.sizeValue || errors.sizeUnit ? "sizeValue-error" : "sizeValue-help"}
           />
@@ -61,7 +78,8 @@ export function ProductForm({ action, product, defaultName, onDone }: Props) {
           <select
             id="sizeUnit"
             name="sizeUnit"
-            defaultValue={product?.sizeUnit ?? "G"}
+            value={sizeUnit}
+            onChange={(event) => setSizeUnit(event.target.value as SizeUnit)}
             className={selectClass}
             aria-invalid={errors.sizeUnit ? true : undefined}
           >
@@ -73,10 +91,28 @@ export function ProductForm({ action, product, defaultName, onDone }: Props) {
         <div className="col-span-2 -mt-1">
           <FieldError id="sizeValue-error" errors={errors.sizeValue ?? errors.sizeUnit} />
           {!errors.sizeValue && !errors.sizeUnit && (
-            <p id="sizeValue-help" className="text-xs text-muted-foreground">En grammes, millilitres ou pièces : 1,5 kg = 1500 g.</p>
+            <p id="sizeValue-help" className="text-xs text-muted-foreground">
+              En grammes, millilitres ou pièces : 1,5 kg = 1500 g.
+            </p>
           )}
         </div>
       </div>
+      {priceLabel && (
+        <div className="grid gap-1.5">
+          <Label htmlFor="price">{priceLabel}</Label>
+          <Input
+            id="price"
+            inputMode="decimal"
+            className="font-mono"
+            value={price}
+            onChange={(event) => {
+              setPrice(event.target.value);
+              priceRef.current = parseEuros(event.target.value);
+            }}
+          />
+          <p className="text-xs text-muted-foreground">{perMeasure}</p>
+        </div>
+      )}
       {state && !state.ok && state.message && (
         <p role="alert" className="text-sm text-destructive">
           {state.message}
