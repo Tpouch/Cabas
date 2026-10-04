@@ -32,7 +32,7 @@ HTTPS is handled by Nginx Proxy Manager (NPM); Coolify only builds and runs the 
      computer (at least 12 characters; a long passphrase is best, the app is on the internet);
    - `SESSION_SECRET` (required): `openssl rand -base64 48`;
    - `APP_PORT` (default 3000): the port published on the server, which NPM forwards to;
-   - `APP_BIND` (default `0.0.0.0`): restrict it to one address of the server if you prefer.
+   - `APP_BIND` (required): the Coolify server's LAN IP, the address NPM connects to.
 3. In **Configuration › Advanced**, turn off **Inject Build Args to Dockerfile**: the build
    needs no variable, and this keeps the password hash and secret out of the build.
 4. Deploy. Migrations run when the `app` container starts; `pgdata` and `uploads` are kept

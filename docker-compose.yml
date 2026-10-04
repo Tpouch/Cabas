@@ -19,9 +19,9 @@ services:
       # true behind the HTTPS proxy. false only for a local plain-HTTP test.
       COOKIE_SECURE: ${COOKIE_SECURE:-true}
     ports:
-      # APP_BIND: address to listen on (all interfaces by default, so the proxy on the LAN can
-      # reach it). Allow this port only from the proxy (see README, "Firewall").
-      - "${APP_BIND:-0.0.0.0}:${APP_PORT:-3000}:${APP_PORT:-3000}"
+      # APP_BIND (required): the server address the proxy connects to, e.g. its LAN IP. Allow this
+      # port only from the proxy (see README, "Firewall").
+      - "${APP_BIND:?set APP_BIND to the server address the proxy connects to}:${APP_PORT:-3000}:${APP_PORT:-3000}"
     volumes:
       - uploads:/data/uploads
     depends_on:
