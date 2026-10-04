@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { LogoutButton } from "@/components/auth/logout-button";
 import { LogoMark } from "@/components/brand/logo-mark";
 import { EmptyState } from "@/components/common/empty-state";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ export default function HomePage() {
           </Button>
         }
       />
+      <LogoutButton className="justify-self-center lg:hidden" />
     </div>
   );
 }
