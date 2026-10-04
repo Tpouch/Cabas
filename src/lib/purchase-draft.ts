@@ -1,4 +1,7 @@
 import { z } from "zod";
+import { formatEurosInput } from "@/domain/money";
+import { formatQuantity } from "@/domain/purchase";
+import type { PurchaseDetail } from "@/server/repositories/purchases";
 
 export const DRAFT_STORAGE_KEY = "cabas:purchase-draft:v1";
 
@@ -47,4 +50,19 @@ export function parseDraft(
 
 export function isEmptyDraft(draft: PurchaseDraft): boolean {
   return draft.storeId === null && draft.lines.length === 0 && draft.total.trim() === "";
+}
+
+export function purchaseToDraft(purchase: PurchaseDetail): PurchaseDraft {
+  return {
+    storeId: purchase.store.id,
+    purchasedAt: purchase.purchasedAt.toISOString().slice(0, 10),
+    lines: purchase.items.map((item) => ({
+      key: item.id,
+      productId: item.product.id,
+      quantity: formatQuantity(item.quantity),
+      unitPrice: formatEurosInput(item.unitPriceCents),
+    })),
+    total: formatEurosInput(purchase.totalCents),
+    totalEdited: true,
+  };
 }

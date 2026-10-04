@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isEmptyDraft, parseDraft, type PurchaseDraft, serializeDraft } from "./purchase-draft";
+import { isEmptyDraft, parseDraft, type PurchaseDraft, purchaseToDraft, serializeDraft } from "./purchase-draft";
 
 const known = { storeIds: new Set(["lidl"]), productIds: new Set(["penne", "pommes"]) };
 
@@ -35,5 +35,32 @@ describe("purchase draft", () => {
   it("knows when a draft holds nothing worth restoring", () => {
     expect(isEmptyDraft({ storeId: null, purchasedAt: "2026-10-03", lines: [], total: "", totalEdited: false })).toBe(true);
     expect(isEmptyDraft(draft)).toBe(false);
+  });
+});
+
+describe("purchaseToDraft", () => {
+  it("turns a saved purchase into editable values", () => {
+    const purchase = {
+      id: "p1",
+      purchasedAt: new Date("2026-10-03T00:00:00.000Z"),
+      totalCents: 497,
+      receiptPath: null,
+      store: { id: "lidl", name: "Lidl", address: null, logoPath: null },
+      items: [
+        {
+          id: "i1",
+          quantity: 1.2,
+          unitPriceCents: 249,
+          product: { id: "pommes", name: "Pommes", brand: null, photoPath: null, sizeValue: 1000, sizeUnit: "G" as const },
+        },
+      ],
+    };
+    expect(purchaseToDraft(purchase)).toEqual({
+      storeId: "lidl",
+      purchasedAt: "2026-10-03",
+      lines: [{ key: "i1", productId: "pommes", quantity: "1,2", unitPrice: "2,49" }],
+      total: "4,97",
+      totalEdited: true,
+    });
   });
 });

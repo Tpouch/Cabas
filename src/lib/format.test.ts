@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatLongDate, formatMonthLabel, formatPerMeasure, formatPriceAge, formatShortDate, formatSize } from "./format";
+import { formatDayLabel, formatLongDate, formatMonthLabel, formatPerMeasure, formatPriceAge, formatShortDate, formatSize } from "./format";
 
 const plain = (s: string) => s.replace(/[  ]/g, " ");
 const day = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
@@ -55,5 +55,12 @@ describe("purchase dates", () => {
   it("names a month with a capital letter", () => {
     expect(formatMonthLabel("2026-10")).toBe("Octobre 2026");
     expect(formatMonthLabel("2027-01")).toBe("Janvier 2027");
+  });
+});
+
+describe("formatDayLabel", () => {
+  it("names the day briefly, without shifting the date", () => {
+    expect(formatDayLabel(new Date("2026-10-03T00:00:00.000Z"))).toBe("Sam. 3 oct.");
+    expect(formatDayLabel(new Date("2026-09-30T00:00:00.000Z"))).toBe("Mer. 30 sept.");
   });
 });

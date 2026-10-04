@@ -53,3 +53,10 @@ export function formatMonthLabel(month: string): string {
   const label = monthYear.format(new Date(`${month}-01T00:00:00.000Z`));
   return label.charAt(0).toLocaleUpperCase("fr-FR") + label.slice(1);
 }
+
+const dayLabel = new Intl.DateTimeFormat("fr-FR", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
+
+export function formatDayLabel(date: Date): string {
+  const label = dayLabel.format(date);
+  return label.charAt(0).toLocaleUpperCase("fr-FR") + label.slice(1);
+}
