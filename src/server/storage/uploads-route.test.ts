@@ -12,7 +12,10 @@ describe("GET /uploads", () => {
   it("serves a stored image to a signed-in user", async () => {
     await mkdir(join(process.env.UPLOADS_DIR as string, "products"), { recursive: true });
     await writeFile(join(process.env.UPLOADS_DIR as string, "products", "a.webp"), "webp");
-    expect((await request(["products", "a.webp"])).status).toBe(200);
+    const response = await request(["products", "a.webp"]);
+    expect(response.status).toBe(200);
+    // Private photos: browsers may cache them, shared caches must not.
+    expect(response.headers.get("cache-control")).toBe("private, max-age=31536000, immutable");
   });
 
   it("refuses images without a session", async () => {

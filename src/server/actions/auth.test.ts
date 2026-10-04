@@ -95,3 +95,12 @@ describe("session checks", () => {
     expect(cookieJar.has(SESSION_COOKIE)).toBe(false);
   });
 });
+
+describe("requirePageSession", () => {
+  it("sends a visitor without a session to the login page", async () => {
+    const { requirePageSession } = await import("@/server/auth/session");
+    await expect(requirePageSession()).resolves.toBeUndefined();
+    cookieJar.clear();
+    await expect(requirePageSession()).rejects.toThrow("NEXT_REDIRECT:/login");
+  });
+});

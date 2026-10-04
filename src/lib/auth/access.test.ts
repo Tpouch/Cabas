@@ -26,6 +26,11 @@ describe("safeNextPath", () => {
     "/\r\n/evil.example",
     "\t//evil.example",
     "/ /evil.example",
+    // The URL parser resolves dot segments into //evil.example.
+    "/..//evil.example",
+    "/.//evil.example",
+    "/a/..//evil.example",
+    "/%2e%2e//evil.example",
   ])(
     "sends %j back to the home page",
     (next) => {

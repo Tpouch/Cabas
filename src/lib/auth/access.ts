@@ -13,8 +13,10 @@ export function safeNextPath(next: string | null | undefined): string {
   } catch {
     return "/";
   }
-  if (url.origin !== BASE || url.pathname === "/login") return "/";
-  return url.pathname + url.search + url.hash;
+  const path = url.pathname + url.search + url.hash;
+  // Dot segments resolve before this point: "/..//evil" becomes "//evil", another site.
+  if (url.origin !== BASE || url.pathname === "/login" || path.startsWith("//")) return "/";
+  return path;
 }
 
 const PUBLIC_FILES = new Set(["/login", "/icon.svg", "/apple-icon.png", "/favicon.ico"]);

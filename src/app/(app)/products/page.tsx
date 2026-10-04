@@ -4,12 +4,13 @@ import { EmptyState } from "@/components/common/empty-state";
 import { NewProductButton } from "@/components/products/new-product-button";
 import { ProductCard } from "@/components/products/product-card";
 import { Input } from "@/components/ui/input";
+import { firstParam } from "@/lib/search-params";
 import { listProducts } from "@/server/repositories/products";
 
 export const metadata: Metadata = { title: "Produits" };
 
-export default async function ProductsPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
-  const { q } = await searchParams;
+export default async function ProductsPage({ searchParams }: { searchParams: Promise<{ q?: string | string[] }> }) {
+  const q = firstParam((await searchParams).q);
   const products = await listProducts(q);
 
   return (

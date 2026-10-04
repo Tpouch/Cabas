@@ -4,7 +4,7 @@ out/
 coverage/
 .env
 .env*.local
-uploads/
+/uploads/
 .DS_Store
 playwright-report/
 test-results/

@@ -65,6 +65,13 @@ describe("createPurchaseAction", () => {
     expect(await db().purchase.count()).toBe(0);
   });
 
+  it("refuses more than 500 lines", async () => {
+    const { fields } = await setup();
+    const line = { productId: "01999999-0000-7000-8000-000000000000", quantity: 1, unitPriceCents: 1 };
+    const result = await createPurchaseAction(null, form({ ...fields, lines: JSON.stringify(Array(501).fill(line)) }));
+    expect(result).toMatchObject({ ok: false, errors: { lines: ["Une course ne peut pas dépasser 500 articles."] } });
+  });
+
   it("rejects a receipt that is not an image", async () => {
     const { fields } = await setup();
     const fake = new File([new TextEncoder().encode("%PDF-1.7")], "ticket.jpg", { type: "image/jpeg" });

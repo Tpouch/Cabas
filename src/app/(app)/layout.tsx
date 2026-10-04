@@ -1,7 +1,9 @@
 import type { ReactNode } from "react";
 import { AppNav } from "@/components/layout/app-nav";
+import { requirePageSession } from "@/server/auth/session";
 
-export default function AppLayout({ children }: { children: ReactNode }) {
+export default async function AppLayout({ children }: { children: ReactNode }) {
+  await requirePageSession();
   return (
     <>
       <AppNav />

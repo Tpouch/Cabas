@@ -1,5 +1,6 @@
 import "server-only";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import {
   createSessionToken,
   isValidSessionToken,
@@ -44,4 +45,9 @@ export async function hasSession(nowMs = Date.now()): Promise<boolean> {
 
 export async function requireSession(): Promise<void> {
   if (!(await hasSession())) throw new UnauthorizedError();
+}
+
+/** For pages: defense in depth behind the proxy, sends visitors to the login page. */
+export async function requirePageSession(): Promise<void> {
+  if (!(await hasSession())) redirect("/login");
 }

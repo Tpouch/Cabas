@@ -38,5 +38,10 @@ export const purchaseInputSchema = z.object({
         return z.NEVER;
       }
     })
-    .pipe(z.array(lineSchema, { error: LINES_ERROR }).min(1, "Ajoute au moins un article.")),
+    .pipe(
+      z
+        .array(lineSchema, { error: LINES_ERROR })
+        .min(1, "Ajoute au moins un article.")
+        .max(500, "Une course ne peut pas dépasser 500 articles."),
+    ),
 });
