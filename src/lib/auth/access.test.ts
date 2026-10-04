@@ -10,7 +10,23 @@ describe("safeNextPath", () => {
     expect(safeNextPath(next)).toBe(expected);
   });
 
-  it.each([null, undefined, "", "products", "//evil.example", "/\\evil.example", "https://evil.example", "/login", "/login?next=/x"])(
+  it.each([
+    null,
+    undefined,
+    "",
+    "products",
+    "//evil.example",
+    "/\\evil.example",
+    "https://evil.example",
+    "/login",
+    "/login?next=/x",
+    // Browsers drop tabs and newlines in URLs: these become //evil.example.
+    "/\t/evil.example",
+    "/\n/evil.example",
+    "/\r\n/evil.example",
+    "\t//evil.example",
+    "/ /evil.example",
+  ])(
     "sends %j back to the home page",
     (next) => {
       expect(safeNextPath(next)).toBe("/");
