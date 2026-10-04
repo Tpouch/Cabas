@@ -50,6 +50,15 @@ export async function saveImage(file: File, kind: ImageKind): Promise<string> {
   return relativePath;
 }
 
+/** Best-effort cleanup of a replaced image: a failure must not undo a saved change. */
+export async function discardImage(relativePath: string | null | undefined): Promise<void> {
+  try {
+    await deleteImage(relativePath);
+  } catch (error) {
+    console.error(`Could not delete replaced image ${relativePath}`, error);
+  }
+}
+
 export async function deleteImage(relativePath: string | null | undefined): Promise<void> {
   if (!relativePath) return;
   const absolute = resolveUploadPath(relativePath.split("/"));

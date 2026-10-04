@@ -11,7 +11,7 @@ import {
   type StoreSummary,
   updateStore,
 } from "@/server/repositories/stores";
-import { deleteImage, ImageRejectedError, saveImage } from "@/server/storage/images";
+import { deleteImage, discardImage, ImageRejectedError, saveImage } from "@/server/storage/images";
 import { optionalFile, text } from "./form-data";
 import { type ActionResult, type ActionState, failure, invalid } from "./result";
 import { storeInputSchema } from "./stores.schema";
@@ -64,16 +64,17 @@ export async function updateStoreAction(
   const logo = await saveLogo(formData);
   if ("error" in logo) return { ok: false, errors: { logo: [logo.error] } };
 
+  let store: StoreSummary;
   try {
-    const store = await updateStore(id, { ...parsed.data, logoPath: logo.path ?? existing.logoPath });
-    if (logo.path) await deleteImage(existing.logoPath);
-    revalidatePath("/stores");
-    return { ok: true, data: store };
+    store = await updateStore(id, { ...parsed.data, logoPath: logo.path ?? existing.logoPath });
   } catch (error) {
     await deleteImage(logo.path);
     if (error instanceof DuplicateStoreError) return { ok: false, errors: DUPLICATE };
     throw error;
   }
+  if (logo.path) await discardImage(existing.logoPath);
+  revalidatePath("/stores");
+  return { ok: true, data: store };
 }
 
 export async function deleteStoreAction(id: string): Promise<ActionResult<null>> {

@@ -96,3 +96,21 @@ describe("malformed ids", () => {
     expect(await getProduct("not-a-uuid")).toBeNull();
   });
 });
+
+describe("photo replacement", () => {
+  it("keeps the new photo when the old one cannot be deleted", async () => {
+    const { mkdir, rm } = await import("node:fs/promises");
+    const created = await createProductAction(null, form({ ...penne, photo: await photo() }));
+    if (!created.ok || !created.data.photoPath) throw new Error("setup failed");
+    // Make deleting the old file fail: replace it with a directory of the same name.
+    const oldFile = join(process.env.UPLOADS_DIR as string, created.data.photoPath);
+    await rm(oldFile);
+    await mkdir(oldFile);
+
+    const result = await updateProductAction(created.data.id, null, form({ ...penne, photo: await photo() }));
+    expect(result.ok).toBe(true);
+    if (!result.ok || !result.data.photoPath) return;
+    expect(result.data.photoPath).not.toBe(created.data.photoPath);
+    await expect(stat(join(process.env.UPLOADS_DIR as string, result.data.photoPath))).resolves.toBeTruthy();
+  });
+});
