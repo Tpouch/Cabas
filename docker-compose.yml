@@ -1,14 +1,18 @@
+# Works with `docker compose --env-file .env up -d --build` and with Coolify's Docker Compose
+# build pack: every ${VAR} below becomes a field in Coolify; ${VAR:?} fields must be filled
+# before the first deployment.
 services:
   app:
     build: .
     image: cabas:latest
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      # Use a password without URL special characters (e.g. `openssl rand -hex 24`).
+      DATABASE_URL: postgresql://${POSTGRES_USER:-cabas}:${POSTGRES_PASSWORD:?}@db:5432/${POSTGRES_DB:-cabas}
       UPLOADS_DIR: /data/uploads
       TZ: ${TZ:-Europe/Paris}
-      APP_PASSWORD_HASH: ${APP_PASSWORD_HASH}
-      SESSION_SECRET: ${SESSION_SECRET}
+      APP_PASSWORD_HASH: ${APP_PASSWORD_HASH:?}
+      SESSION_SECRET: ${SESSION_SECRET:?}
       COOKIE_SECURE: ${COOKIE_SECURE:-false}
     ports:
       # Bind to the NetBird interface only (APP_BIND = the host's 100.x NetBird IP), never 0.0.0.0.
@@ -19,7 +23,7 @@ services:
       db:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/ > /dev/null || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/login > /dev/null || exit 1"]
       interval: 30s
       timeout: 5s
       retries: 3
@@ -29,9 +33,9 @@ services:
     image: postgres:18-alpine
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER:-cabas}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+      POSTGRES_DB: ${POSTGRES_DB:-cabas}
       TZ: ${TZ:-Europe/Paris}
     volumes:
       - pgdata:/var/lib/postgresql
