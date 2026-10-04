@@ -1,35 +1,55 @@
+type Entry = { failures: number; windowStart: number };
+
 /**
- * Global login limiter (single user, single process). Kept in memory: a restart clears it,
- * which only gives an attacker 5 more tries per restart.
+ * Login limiter per client address (single process). Kept in memory: a restart clears it,
+ * which only gives an attacker 5 more tries per address per restart.
  */
 export class LoginLimiter {
-  private failures = 0;
-  private windowStart = 0;
+  private readonly entries = new Map<string, Entry>();
 
   constructor(
     private readonly maxFailures = 5,
     private readonly windowMs = 15 * 60_000,
+    private readonly maxEntries = 10_000,
   ) {}
 
-  private windowOver(nowMs: number): boolean {
-    return nowMs - this.windowStart >= this.windowMs;
+  get size(): number {
+    return this.entries.size;
   }
 
-  retryAfterMs(nowMs: number): number {
-    if (this.failures < this.maxFailures || this.windowOver(nowMs)) return 0;
-    return this.windowStart + this.windowMs - nowMs;
+  private expired(entry: Entry, nowMs: number): boolean {
+    return nowMs - entry.windowStart >= this.windowMs;
   }
 
-  recordFailure(nowMs: number): void {
-    if (this.failures === 0 || this.windowOver(nowMs)) {
-      this.failures = 0;
-      this.windowStart = nowMs;
+  retryAfterMs(key: string, nowMs: number): number {
+    const entry = this.entries.get(key);
+    if (!entry || entry.failures < this.maxFailures || this.expired(entry, nowMs)) return 0;
+    return entry.windowStart + this.windowMs - nowMs;
+  }
+
+  recordFailure(key: string, nowMs: number): void {
+    const entry = this.entries.get(key);
+    if (entry && !this.expired(entry, nowMs)) {
+      entry.failures += 1;
+      return;
     }
-    this.failures += 1;
+    this.entries.delete(key);
+    this.makeRoom(nowMs);
+    this.entries.set(key, { failures: 1, windowStart: nowMs });
   }
 
-  reset(): void {
-    this.failures = 0;
-    this.windowStart = 0;
+  reset(key?: string): void {
+    if (key === undefined) this.entries.clear();
+    else this.entries.delete(key);
+  }
+
+  /** Drops expired entries, then the oldest ones, so many addresses cannot exhaust memory. */
+  private makeRoom(nowMs: number): void {
+    if (this.entries.size < this.maxEntries) return;
+    for (const [key, entry] of this.entries) if (this.expired(entry, nowMs)) this.entries.delete(key);
+    for (const key of this.entries.keys()) {
+      if (this.entries.size < this.maxEntries) break;
+      this.entries.delete(key);
+    }
   }
 }

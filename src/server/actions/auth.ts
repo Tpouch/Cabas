@@ -1,7 +1,9 @@
 "use server";
 
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { safeNextPath } from "@/lib/auth/access";
+import { clientAddress } from "@/lib/auth/client-address";
 import { verifyPassword } from "@/lib/auth/password";
 import { getAuthEnv } from "@/lib/env";
 import { loginLimiter } from "@/server/auth/login-limiter";
@@ -20,16 +22,17 @@ export async function loginAction(_prev: ActionState<null>, formData: FormData):
   }
 
   const now = Date.now();
-  const retryAfterMs = loginLimiter.retryAfterMs(now);
+  const client = clientAddress(await headers());
+  const retryAfterMs = loginLimiter.retryAfterMs(client, now);
   if (retryAfterMs > 0) return failure(`Trop d'essais. Réessaie dans ${Math.ceil(retryAfterMs / 60_000)} min.`);
 
   const password = text(formData, "password");
   if (!password || password.length > MAX_PASSWORD_LENGTH || !verifyPassword(password, passwordHash)) {
-    loginLimiter.recordFailure(now);
+    loginLimiter.recordFailure(client, now);
     return { ok: false, errors: { password: ["Mot de passe incorrect."] } };
   }
 
-  loginLimiter.reset();
+  loginLimiter.reset(client);
   await startSession(now);
   redirect(safeNextPath(text(formData, "next")));
 }
