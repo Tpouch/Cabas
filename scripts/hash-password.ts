@@ -22,7 +22,7 @@ function fail(message: string): never {
 }
 
 const password = await askHidden("Mot de passe : ");
-if (password.length < 8) fail("Le mot de passe doit faire au moins 8 caractères.");
+if (password.length < 12) fail("Le mot de passe doit faire au moins 12 caractères.");
 if ((await askHidden("Confirme le mot de passe : ")) !== password) fail("Les deux mots de passe ne correspondent pas.");
 rl.close();
 console.log(`APP_PASSWORD_HASH=${hashPassword(password)}`);
