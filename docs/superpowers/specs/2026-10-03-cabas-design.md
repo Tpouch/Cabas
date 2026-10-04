@@ -30,8 +30,9 @@ cabas is a self-hosted, mobile-first web app that lets a single user:
 
 - **Single user**, no accounts. Every page is protected by a **single password** (§2.1).
 - **Self-hosted** on the user's homelab, deployed with **Coolify** (Docker Compose build
-  pack) and served over **HTTPS** on a domain by Coolify's reverse proxy. The app publishes
-  no host port: the proxy is the only way in (amended 2026-10-04: NetBird is no longer used).
+  pack). **Nginx Proxy Manager** serves it over **HTTPS** on its domain and forwards to the
+  port the app publishes on the server (`APP_PORT`), which the firewall opens to the proxy only
+  (amended 2026-10-05: NetBird and Coolify's own proxy are not used).
 - **UI language:** French (`fr-FR`), currency **EUR**, timezone **Europe/Paris** for all
   date grouping. **Code and documentation:** English.
 - **Mobile first**, fully usable on desktop. Installable to the home screen (PWA manifest),
@@ -46,7 +47,7 @@ cabas is a self-hosted, mobile-first web app that lets a single user:
   that address is refused for the rest of the window ("Trop d’essais…"); after **50 failures
   within 15 minutes across all addresses**, every new login is refused for the rest of that
   window. The client address is the last `X-Forwarded-For` entry, appended by the proxy (not
-  forgeable as long as the app is only reachable through the proxy). Passwords are compared
+  forgeable as long as only the proxy can reach the app's port). Passwords are compared
   in constant time and must be at least 12 characters.
 - A successful login sets a **signed session cookie** (HMAC-SHA256 with `SESSION_SECRET`,
   ≥ 32 characters) valid **30 days**, signed with a key derived from both `SESSION_SECRET` and the password
@@ -82,8 +83,8 @@ See `CLAUDE.md` and `docs/best-practices.md` for versions and conventions.
 - `docker-compose.yml` with two services:
   - `app`: multi-stage image built from the Next.js `standalone` output on `node:24-alpine`,
     running as the non-root `node` user. The entrypoint runs `prisma migrate deploy`, then
-    `node server.js`. It listens on `APP_PORT` (default `3000`) inside the Compose network and
-    publishes no host port; Coolify's proxy routes the domain to it.
+    `node server.js`. It listens on `APP_PORT` (default `3000`) and publishes it on the server
+    (`APP_BIND`, all interfaces by default) for the HTTPS reverse proxy.
   - `db`: `postgres:18-alpine`, not published on the host, with a `pg_isready` healthcheck.
     `app` waits for `db` to be healthy.
 - Named volumes: `pgdata` (mounted at `/var/lib/postgresql`) and `uploads` (mounted at

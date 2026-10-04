@@ -1,7 +1,7 @@
 /**
- * The client address as seen by the reverse proxy (Coolify's Traefik). The proxy appends the
- * address it received the connection from to X-Forwarded-For, so the last entry is the one a
- * client cannot forge. Only valid because the app is reachable through the proxy alone.
+ * The client address as seen by the HTTPS reverse proxy (Nginx Proxy Manager). The proxy
+ * appends the address it received the connection from to X-Forwarded-For, so the last entry is
+ * the one a client cannot forge — as long as only the proxy can reach the app's port.
  */
 export function clientAddress(headers: Headers): string {
   const forwarded = headers
