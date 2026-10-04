@@ -1,22 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { uploadUrl } from "@/lib/uploads";
+import { useFilePreview } from "./use-file-preview";
 
 type Props = { name: string; label: string; currentPath?: string | null; errors?: string[] };
 
 export function ImageField({ name, label, currentPath, errors }: Props) {
-  const [preview, setPreview] = useState<string | null>(currentPath ? uploadUrl(currentPath, { thumb: true }) : null);
+  const { preview, showFile } = useFilePreview(currentPath ? uploadUrl(currentPath, { thumb: true }) : null);
   const errorId = `${name}-error`;
-
-  // Free the previous blob preview whenever it is replaced, and on unmount.
-  useEffect(() => {
-    return () => {
-      if (preview?.startsWith("blob:")) URL.revokeObjectURL(preview);
-    };
-  }, [preview]);
 
   return (
     <div className="flex items-center gap-3">
@@ -32,10 +25,7 @@ export function ImageField({ name, label, currentPath, errors }: Props) {
           accept="image/jpeg,image/png,image/webp"
           aria-invalid={errors ? true : undefined}
           aria-describedby={errors ? errorId : undefined}
-          onChange={(event) => {
-            const file = event.currentTarget.files?.[0];
-            setPreview(file ? URL.createObjectURL(file) : null);
-          }}
+          onChange={(event) => showFile(event.currentTarget.files?.[0])}
         />
         {errors && (
           <p id={errorId} role="alert" className="text-sm text-destructive">

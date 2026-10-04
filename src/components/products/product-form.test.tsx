@@ -52,3 +52,22 @@ describe("ProductForm accessibility", () => {
     expect(screen.getByLabelText("Contenance")).toHaveAttribute("aria-describedby", "sizeValue-error");
   });
 });
+
+describe("ProductForm inside a purchase", () => {
+  it("asks for the price in the store, shows the price per kilo and hands the price back", async () => {
+    const product = { id: "p1", name: "Riz", brand: null, photoPath: null, sizeValue: 1000, sizeUnit: "G" as const, bestPriceCents: null };
+    const action = vi.fn().mockResolvedValue({ ok: true, data: product });
+    const onDone = vi.fn();
+    render(<ProductForm action={action} defaultName="Riz" priceLabel="Prix chez Lidl" onDone={onDone} />);
+    await userEvent.type(screen.getByLabelText("Contenance"), "1000");
+    await userEvent.type(screen.getByLabelText("Prix chez Lidl"), "2,79");
+    expect(screen.getByText(/= 2,79\s€\/kg/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole("button", { name: "Enregistrer" }));
+    await vi.waitFor(() => expect(onDone).toHaveBeenCalledWith(product, 279));
+  });
+
+  it("has no price field on its own", () => {
+    render(<ProductForm action={vi.fn()} onDone={vi.fn()} />);
+    expect(screen.queryByLabelText(/Prix/)).not.toBeInTheDocument();
+  });
+});

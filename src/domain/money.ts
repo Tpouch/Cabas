@@ -15,3 +15,7 @@ const euroFormatter = new Intl.NumberFormat("fr-FR", { style: "currency", curren
 export function formatEuros(cents: number): string {
   return euroFormatter.format(cents / 100);
 }
+
+export function formatEurosInput(cents: number): string {
+  return (cents / 100).toFixed(2).replace(".", ",");
+}

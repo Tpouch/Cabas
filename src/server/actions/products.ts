@@ -5,6 +5,7 @@ import {
   createProduct,
   deleteProduct,
   getProduct,
+  ProductInUseError,
   ProductNotFoundError,
   type ProductSummary,
   updateProduct,
@@ -81,6 +82,9 @@ export async function deleteProductAction(id: string): Promise<ActionResult<null
   try {
     product = await deleteProduct(id);
   } catch (error) {
+    if (error instanceof ProductInUseError) {
+      return failure("Ce produit apparaît dans des courses : il ne peut pas être supprimé.");
+    }
     if (error instanceof ProductNotFoundError) return failure("Ce produit n'existe plus.");
     throw error;
   }

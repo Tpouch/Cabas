@@ -16,6 +16,7 @@ export type ProductSummary = {
 };
 
 export class ProductNotFoundError extends Error {}
+export class ProductInUseError extends Error {}
 
 export type ProductInput = {
   name: string;
@@ -74,6 +75,7 @@ export async function deleteProduct(id: string): Promise<ProductSummary> {
   try {
     return toSummary(await db().product.delete({ where: { id }, select: withPrices }));
   } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") throw new ProductInUseError();
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") throw new ProductNotFoundError();
     throw error;
   }

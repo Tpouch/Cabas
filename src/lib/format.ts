@@ -29,3 +29,34 @@ export function formatPriceAge(observedAt: Date, now: Date): string {
   const years = Math.floor(days / 365);
   return `il y a ${years} ${years > 1 ? "ans" : "an"}`;
 }
+
+const longDate = new Intl.DateTimeFormat("fr-FR", {
+  weekday: "long",
+  day: "numeric",
+  month: "long",
+  year: "numeric",
+  timeZone: "UTC",
+});
+const shortDate = new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "2-digit", timeZone: "UTC" });
+const monthYear = new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric", timeZone: "UTC" });
+
+/** Purchase dates are calendar days stored at UTC midnight: format them in UTC. */
+export function formatLongDate(date: Date): string {
+  return longDate.format(date);
+}
+
+export function formatShortDate(date: Date): string {
+  return shortDate.format(date);
+}
+
+export function formatMonthLabel(month: string): string {
+  const label = monthYear.format(new Date(`${month}-01T00:00:00.000Z`));
+  return label.charAt(0).toLocaleUpperCase("fr-FR") + label.slice(1);
+}
+
+const dayLabel = new Intl.DateTimeFormat("fr-FR", { weekday: "short", day: "numeric", month: "short", timeZone: "UTC" });
+
+export function formatDayLabel(date: Date): string {
+  const label = dayLabel.format(date);
+  return label.charAt(0).toLocaleUpperCase("fr-FR") + label.slice(1);
+}

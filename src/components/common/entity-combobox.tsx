@@ -34,11 +34,13 @@ export function EntityCombobox({ id, name, label, options, value, onChange, onCr
 
   function choose(optionId: string) {
     onChange(optionId);
+    setQuery("");
     setOpen(false);
   }
 
   function create() {
     onCreate?.(trimmed);
+    setQuery("");
     setOpen(false);
   }
 

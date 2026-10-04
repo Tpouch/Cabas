@@ -47,3 +47,15 @@ describe("EntityCombobox", () => {
     expect(onCreate).toHaveBeenCalledWith("Auchan V2");
   });
 });
+
+describe("EntityCombobox search", () => {
+  it("starts a fresh search each time it opens after a choice", async () => {
+    render(<Harness />);
+    await userEvent.click(screen.getByRole("combobox", { name: "Magasin" }));
+    await userEvent.type(screen.getByPlaceholderText("Rechercher…"), "lecl");
+    await userEvent.click(screen.getByRole("option", { name: "Leclerc Templeuve" }));
+    await userEvent.click(screen.getByRole("combobox", { name: "Magasin" }));
+    expect(screen.getByPlaceholderText("Rechercher…")).toHaveValue("");
+    expect(screen.getByRole("option", { name: "Lidl Lomme" })).toBeInTheDocument();
+  });
+});

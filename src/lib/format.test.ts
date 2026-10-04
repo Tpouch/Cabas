@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatPerMeasure, formatPriceAge, formatSize } from "./format";
+import { formatDayLabel, formatLongDate, formatMonthLabel, formatPerMeasure, formatPriceAge, formatShortDate, formatSize } from "./format";
 
 const plain = (s: string) => s.replace(/[  ]/g, " ");
 const day = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
@@ -38,5 +38,29 @@ describe("formatPriceAge", () => {
     ["2023-01-01", "il y a 3 ans"],
   ])("describes a price observed on %s as %j", (iso, expected) => {
     expect(formatPriceAge(day(iso), now)).toBe(expected);
+  });
+});
+
+describe("purchase dates", () => {
+  it("formats a calendar date without shifting it", () => {
+    const date = new Date("2026-10-03T00:00:00.000Z");
+    expect(formatLongDate(date)).toBe("samedi 3 octobre 2026");
+    expect(formatShortDate(date)).toBe("03/10");
+  });
+
+  it("keeps the last day of a month in that month", () => {
+    expect(formatLongDate(new Date("2026-09-30T00:00:00.000Z"))).toBe("mercredi 30 septembre 2026");
+  });
+
+  it("names a month with a capital letter", () => {
+    expect(formatMonthLabel("2026-10")).toBe("Octobre 2026");
+    expect(formatMonthLabel("2027-01")).toBe("Janvier 2027");
+  });
+});
+
+describe("formatDayLabel", () => {
+  it("names the day briefly, without shifting the date", () => {
+    expect(formatDayLabel(new Date("2026-10-03T00:00:00.000Z"))).toBe("Sam. 3 oct.");
+    expect(formatDayLabel(new Date("2026-09-30T00:00:00.000Z"))).toBe("Mer. 30 sept.");
   });
 });
