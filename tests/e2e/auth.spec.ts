@@ -42,3 +42,21 @@ test("logs out", async ({ browser }) => {
   await expect(page).toHaveURL(/\/login\?next=%2Fproducts$/);
   await context.close();
 });
+
+test("sends security headers", async ({ request }) => {
+  const response = await request.get("/login");
+  expect(response.headers()["content-security-policy"]).toContain("frame-ancestors 'none'");
+  expect(response.headers()["x-content-type-options"]).toBe("nosniff");
+});
+
+test("main pages run without content security policy violations", async ({ page }) => {
+  const violations: string[] = [];
+  page.on("console", (message) => {
+    if (/Content Security Policy|Refused to/i.test(message.text())) violations.push(message.text());
+  });
+  for (const path of ["/", "/products", "/stores", "/purchases", "/purchases/new"]) {
+    await page.goto(path);
+    await expect(page.locator("main")).toBeVisible();
+  }
+  expect(violations).toEqual([]);
+});
