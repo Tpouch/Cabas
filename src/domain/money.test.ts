@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatEuros, parseEuros } from "./money";
+import { formatEuros, formatEurosInput, parseEuros } from "./money";
 
 const plain = (s: string) => s.replace(/[  ]/g, " ");
 
@@ -27,5 +27,17 @@ describe("formatEuros", () => {
     expect(plain(formatEuros(129))).toBe("1,29 €");
     expect(plain(formatEuros(123456))).toBe("1 234,56 €");
     expect(plain(formatEuros(0))).toBe("0,00 €");
+  });
+});
+
+describe("formatEurosInput", () => {
+  it("writes cents the way a price field shows them", () => {
+    expect(formatEurosInput(99)).toBe("0,99");
+    expect(formatEurosInput(1200)).toBe("12,00");
+    expect(formatEurosInput(123456)).toBe("1234,56");
+  });
+
+  it("round-trips through parseEuros", () => {
+    expect(parseEuros(formatEurosInput(249))).toBe(249);
   });
 });
