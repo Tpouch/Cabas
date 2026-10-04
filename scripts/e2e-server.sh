@@ -9,6 +9,9 @@ until docker exec cabas-e2e-db pg_isready -U e2e -d cabas_e2e > /dev/null 2>&1; 
 export DATABASE_URL="postgresql://e2e:e2e@127.0.0.1:5433/cabas_e2e"
 export UPLOADS_DIR="$(mktemp -d)"
 pnpm prisma migrate deploy
+export APP_PASSWORD_HASH="$(node --no-warnings --input-type=module -e "import { hashPassword } from './src/lib/auth/password.ts'; console.log(hashPassword(process.env.E2E_PASSWORD));")"
+export SESSION_SECRET="$(openssl rand -base64 48)"
+export COOKIE_SECURE=false
 pnpm build
 cp -r .next/static .next/standalone/.next/static
 cp -r public .next/standalone/public

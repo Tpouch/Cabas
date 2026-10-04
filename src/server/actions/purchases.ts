@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { requireSession } from "@/server/auth/session";
 import {
   createPurchase,
   deletePurchase,
@@ -45,6 +46,7 @@ export async function createPurchaseAction(
   _prev: ActionState<{ id: string }>,
   formData: FormData,
 ): Promise<ActionResult<{ id: string }>> {
+  await requireSession();
   const parsed = parse(formData);
   if (!parsed.success) return invalid(parsed.error);
   const receipt = await saveReceipt(formData);
@@ -67,6 +69,7 @@ export async function updatePurchaseAction(
   _prev: ActionState<{ id: string }>,
   formData: FormData,
 ): Promise<ActionResult<{ id: string }>> {
+  await requireSession();
   const parsed = parse(formData);
   if (!parsed.success) return invalid(parsed.error);
   const receipt = await saveReceipt(formData);
@@ -88,6 +91,7 @@ export async function updatePurchaseAction(
 }
 
 export async function deletePurchaseAction(id: string): Promise<ActionResult<null>> {
+  await requireSession();
   let receiptPath: string | null;
   try {
     ({ receiptPath } = await deletePurchase(id));

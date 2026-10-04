@@ -3,6 +3,7 @@
 import { Plus } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { LogoutButton } from "@/components/auth/logout-button";
 import { LogoMark } from "@/components/brand/logo-mark";
 import { cn } from "@/lib/utils";
 import { hidesMobileBar, isActive, NAV_ITEMS, NEW_PURCHASE_HREF, type NavItem } from "./nav-items";
@@ -84,6 +85,7 @@ export function AppNav() {
             );
           })}
         </nav>
+        <LogoutButton className="mt-auto w-full" />
       </aside>
     </>
   );

@@ -4,6 +4,7 @@ import { AppNav } from "./app-nav";
 
 let pathname = "/products/0199-abc";
 vi.mock("next/navigation", () => ({ usePathname: () => pathname }));
+vi.mock("@/server/actions/auth", () => ({ logoutAction: vi.fn() }));
 
 describe("AppNav", () => {
   beforeEach(() => {
@@ -21,6 +22,11 @@ describe("AppNav", () => {
       expect(within(nav).getByRole("link", { name: /Produits/ })).toHaveAttribute("href", "/products");
       expect(within(nav).getByRole("link", { name: /Magasins/ })).toHaveAttribute("href", "/stores");
     }
+  });
+
+  it("offers to log out from the sidebar", () => {
+    render(<AppNav />);
+    expect(screen.getByRole("button", { name: "Se déconnecter" })).toBeInTheDocument();
   });
 
   it("shows the cabas logo as a link home in the sidebar", () => {

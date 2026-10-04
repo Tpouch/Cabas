@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { requireSession } from "@/server/auth/session";
 import { linkAlternative, SelfAlternativeError, unlinkAlternative } from "@/server/repositories/alternatives";
 import { ProductNotFoundError } from "@/server/repositories/products";
 import { type ActionResult, failure } from "./result";
@@ -10,6 +11,7 @@ function revalidate(...ids: string[]) {
 }
 
 export async function addAlternativeAction(productId: string, otherId: string): Promise<ActionResult<null>> {
+  await requireSession();
   try {
     await linkAlternative(productId, otherId);
   } catch (error) {
@@ -22,6 +24,7 @@ export async function addAlternativeAction(productId: string, otherId: string): 
 }
 
 export async function removeAlternativeAction(productId: string, otherId: string): Promise<ActionResult<null>> {
+  await requireSession();
   await unlinkAlternative(productId, otherId);
   revalidate(productId, otherId);
   return { ok: true, data: null };

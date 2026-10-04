@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { requireSession } from "@/server/auth/session";
 import {
   createStore,
   deleteStore,
@@ -33,6 +34,7 @@ export async function createStoreAction(
   _prev: ActionState<StoreSummary>,
   formData: FormData,
 ): Promise<ActionResult<StoreSummary>> {
+  await requireSession();
   const parsed = storeInputSchema.safeParse({ name: text(formData, "name"), address: text(formData, "address") });
   if (!parsed.success) return invalid(parsed.error);
 
@@ -55,6 +57,7 @@ export async function updateStoreAction(
   _prev: ActionState<StoreSummary>,
   formData: FormData,
 ): Promise<ActionResult<StoreSummary>> {
+  await requireSession();
   const parsed = storeInputSchema.safeParse({ name: text(formData, "name"), address: text(formData, "address") });
   if (!parsed.success) return invalid(parsed.error);
 
@@ -78,6 +81,7 @@ export async function updateStoreAction(
 }
 
 export async function deleteStoreAction(id: string): Promise<ActionResult<null>> {
+  await requireSession();
   try {
     const store = await deleteStore(id);
     await deleteImage(store.logoPath);
