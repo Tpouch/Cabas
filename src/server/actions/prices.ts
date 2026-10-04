@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { requireSession } from "@/server/auth/session";
 import { addManualPrice, UnknownStoreError } from "@/server/repositories/prices";
 import { productExists } from "@/server/repositories/products";
 import { text } from "./form-data";
@@ -12,6 +13,7 @@ export async function addPriceAction(
   _prev: ActionState<null>,
   formData: FormData,
 ): Promise<ActionResult<null>> {
+  await requireSession();
   const parsed = priceInputSchema.safeParse({
     storeId: text(formData, "storeId"),
     price: text(formData, "price"),
