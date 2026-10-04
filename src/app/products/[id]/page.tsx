@@ -11,9 +11,9 @@ import { rankAlternatives } from "@/domain/alternatives";
 import { todayIso } from "@/lib/dates";
 import { formatSize } from "@/lib/format";
 import { uploadUrl } from "@/lib/uploads";
-import { listAlternatives } from "@/server/repositories/alternatives";
+import { listAlternativeCandidates, listAlternatives } from "@/server/repositories/alternatives";
 import { listStorePrices } from "@/server/repositories/prices";
-import { getProduct, listProducts } from "@/server/repositories/products";
+import { getProduct } from "@/server/repositories/products";
 import { listStores } from "@/server/repositories/stores";
 
 type Props = { params: Promise<{ id: string }> };
@@ -25,12 +25,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function ProductPage({ params }: Props) {
   const { id } = await params;
-  const [product, prices, stores, alternatives, allProducts] = await Promise.all([
+  const [product, prices, stores, alternatives, candidates] = await Promise.all([
     getProduct(id),
     listStorePrices(id),
     listStores(),
     listAlternatives(id),
-    listProducts(),
+    listAlternativeCandidates(id),
   ]);
   if (!product) notFound();
   const byId = new Map(alternatives.map((alt) => [alt.id, alt]));
@@ -38,8 +38,6 @@ export default async function ProductPage({ params }: Props) {
     const source = byId.get(alt.id) as (typeof alternatives)[number];
     return { ...alt, name: source.name, photoPath: source.photoPath };
   });
-  const linkedIds = new Set([product.id, ...alternatives.map((alt) => alt.id)]);
-  const candidates = allProducts.filter((p) => !linkedIds.has(p.id));
   const now = new Date();
 
   return (

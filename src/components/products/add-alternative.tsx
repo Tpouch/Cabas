@@ -7,9 +7,9 @@ import { runAction } from "@/components/common/run-action";
 import { Button } from "@/components/ui/button";
 import { uploadUrl } from "@/lib/uploads";
 import { addAlternativeAction } from "@/server/actions/alternatives";
-import type { ProductSummary } from "@/server/repositories/products";
+import type { AlternativeCandidate } from "@/server/repositories/alternatives";
 
-export function AddAlternative({ productId, candidates }: { productId: string; candidates: ProductSummary[] }) {
+export function AddAlternative({ productId, candidates }: { productId: string; candidates: AlternativeCandidate[] }) {
   const [open, setOpen] = useState(false);
   const [otherId, setOtherId] = useState<string | null>(null);
 

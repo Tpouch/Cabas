@@ -36,3 +36,19 @@ export async function linkAlternative(productId: string, otherId: string): Promi
 export async function unlinkAlternative(productId: string, otherId: string): Promise<void> {
   await db().productAlternative.deleteMany({ where: orderedPair(productId, otherId) });
 }
+
+export type AlternativeCandidate = { id: string; name: string; brand: string | null; photoPath: string | null };
+
+/** Products that can still be linked to `productId`, without loading their prices. */
+export async function listAlternativeCandidates(productId: string): Promise<AlternativeCandidate[]> {
+  if (!isUuid(productId)) return [];
+  return db().product.findMany({
+    where: {
+      id: { not: productId },
+      alternativesAs: { none: { productBId: productId } },
+      alternativesBs: { none: { productAId: productId } },
+    },
+    select: { id: true, name: true, brand: true, photoPath: true },
+    orderBy: { name: "asc" },
+  });
+}

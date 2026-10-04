@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { db } from "@/server/db";
-import { listAlternatives } from "@/server/repositories/alternatives";
+import { listAlternativeCandidates, listAlternatives } from "@/server/repositories/alternatives";
 import { addAlternativeAction, removeAlternativeAction } from "./alternatives";
 
 async function product(name: string) {
@@ -43,5 +43,26 @@ describe("alternatives", () => {
     await addAlternativeAction(penne.id, combino.id);
     await db().product.delete({ where: { id: combino.id } });
     expect(await listAlternatives(penne.id)).toEqual([]);
+  });
+});
+
+describe("alternative candidates", () => {
+  it("offers every other product that is not already linked, by name, without prices", async () => {
+    const [penne, combino, riz, lait] = [
+      await product("Penne"),
+      await product("Combino"),
+      await product("Riz"),
+      await product("Lait"),
+    ];
+    await addAlternativeAction(penne.id, combino.id);
+    const candidates = await listAlternativeCandidates(penne.id);
+    expect(candidates).toEqual([
+      { id: lait.id, name: "Lait", brand: null, photoPath: null },
+      { id: riz.id, name: "Riz", brand: null, photoPath: null },
+    ]);
+  });
+
+  it("offers nothing for a malformed id", async () => {
+    expect(await listAlternativeCandidates("abc")).toEqual([]);
   });
 });
