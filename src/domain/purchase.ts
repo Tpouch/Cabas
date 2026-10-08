@@ -1,13 +1,13 @@
+import { multiplyByQuantity } from "./line-amount";
+
 export type PurchaseLine = { productId: string; quantity: number; unitPriceCents: number };
 
 const QUANTITY_PATTERN = /^\d+(?:[.,]\d{1,3})?$/;
 const MAX_QUANTITY = 9999;
 const quantityFormatter = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 3, useGrouping: false });
 
-/** Works on thousandths so 1.005 × 1000 is exactly 1005, then rounds half up. */
 export function lineSubtotal(quantity: number, unitPriceCents: number): number {
-  const thousandths = Math.round(quantity * 1000);
-  return Math.round((thousandths * unitPriceCents) / 1000);
+  return multiplyByQuantity(quantity, unitPriceCents);
 }
 
 export function sumOfLines(lines: Pick<PurchaseLine, "quantity" | "unitPriceCents">[]): number {
