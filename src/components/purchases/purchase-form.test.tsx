@@ -80,6 +80,21 @@ describe("PurchaseForm", () => {
     ]);
   });
 
+  it("marks an unfinished promotion after the save is refused", async () => {
+    const action = vi.fn().mockResolvedValue({ ok: false, errors: { lines: ["Indique un nombre d’articles entre 1 et 20."] } });
+    renderForm({ action });
+    await chooseStore();
+    await addPenne();
+    await userEvent.click(screen.getByRole("button", { name: "Ajouter une promo sur Penne Rigate" }));
+    await userEvent.click(screen.getByRole("button", { name: "Achetés / offerts" }));
+    await userEvent.type(screen.getByLabelText("Articles achetés pour Penne Rigate"), "2");
+    expect(screen.getByLabelText("Articles offerts pour Penne Rigate")).not.toHaveAttribute("aria-invalid");
+
+    await userEvent.click(screen.getByRole("button", { name: "Enregistrer la course" }));
+    expect(await screen.findByText("Indique un nombre d’articles entre 1 et 20.")).toBeInTheDocument();
+    expect(screen.getByLabelText("Articles offerts pour Penne Rigate")).toHaveAttribute("aria-invalid", "true");
+  });
+
   it("restores a draft line with its promotion", async () => {
     window.localStorage.setItem(
       DRAFT_STORAGE_KEY,

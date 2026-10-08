@@ -5,9 +5,19 @@ import { describe, expect, it } from "vitest";
 import { type DraftPromo, emptyDraftPromo } from "@/lib/purchase-draft";
 import { PromoEditor } from "./promo-editor";
 
-function Harness({ initial, quantity = 3 }: { initial?: DraftPromo; quantity?: number }) {
+function Harness({ initial, quantity = 3, showMissing = false }: { initial?: DraftPromo; quantity?: number; showMissing?: boolean }) {
   const [promo, setPromo] = useState(initial);
-  return <PromoEditor lineKey="a" productName="Penne" promo={promo} quantity={quantity} unitPriceCents={120} onChange={setPromo} />;
+  return (
+    <PromoEditor
+      lineKey="a"
+      productName="Penne"
+      promo={promo}
+      quantity={quantity}
+      unitPriceCents={120}
+      showMissing={showMissing}
+      onChange={setPromo}
+    />
+  );
 }
 
 async function addTwoPlusOne() {
@@ -41,6 +51,17 @@ describe("PromoEditor", () => {
     expect(screen.getByLabelText("Pourcentage de remise pour Penne")).toHaveAttribute("aria-invalid", "true");
     expect(screen.getByRole("button", { name: "Valider la promo sur Penne" })).toBeDisabled();
     expect(screen.getByRole("status")).toBeEmptyDOMElement();
+  });
+
+  it("leaves an empty field unmarked while the user is still typing", () => {
+    render(<Harness initial={{ ...emptyDraftPromo(), kind: "BUY_GET_FREE", buy: "2" }} />);
+    expect(screen.getByLabelText("Articles offerts pour Penne")).not.toHaveAttribute("aria-invalid");
+  });
+
+  it("marks an empty field once the save was refused", () => {
+    render(<Harness initial={{ ...emptyDraftPromo(), kind: "BUY_GET_FREE", buy: "2" }} showMissing />);
+    expect(screen.getByLabelText("Articles offerts pour Penne")).toHaveAttribute("aria-invalid", "true");
+    expect(screen.getByLabelText("Articles achetés pour Penne")).not.toHaveAttribute("aria-invalid");
   });
 
   it("marks the selected kind as pressed", async () => {

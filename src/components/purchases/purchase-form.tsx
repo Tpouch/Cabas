@@ -228,7 +228,13 @@ function PurchaseEditor({
               </h2>
               <span className="font-mono text-sm">{formatEuros(sum)}</span>
             </div>
-            <PurchaseLines lines={draft.lines} productsById={productsById} onChange={updateLine} onRemove={removeLine} />
+            <PurchaseLines
+              lines={draft.lines}
+              productsById={productsById}
+              onChange={updateLine}
+              onRemove={removeLine}
+              showMissing={Boolean(errors.lines)}
+            />
             <EntityCombobox
               id="productPicker"
               name="productPicker"

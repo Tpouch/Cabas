@@ -16,6 +16,8 @@ type Props = {
   promo: DraftPromo | undefined;
   quantity: number | null;
   unitPriceCents: number | null;
+  /** After a refused save, empty values count as invalid too. */
+  showMissing?: boolean;
   onChange: (promo: DraftPromo | undefined) => void;
 };
 
@@ -26,14 +28,16 @@ const KINDS: { kind: PromoKind; label: string }[] = [
   { kind: "BUY_GET_FREE", label: "Achetés / offerts" },
 ];
 
-function countInvalid(value: string, range: { min: number; max: number }): boolean {
+function countInvalid(value: string, range: { min: number; max: number }, showMissing: boolean): boolean {
+  if (value.trim() === "") return showMissing;
   const parsed = parsePromoNumber(value);
-  return value.trim() !== "" && (parsed === null || !inRange(parsed, range));
+  return parsed === null || !inRange(parsed, range);
 }
 
-function amountInvalid(value: string, unitPriceCents: number | null): boolean {
+function amountInvalid(value: string, unitPriceCents: number | null, showMissing: boolean): boolean {
+  if (value.trim() === "") return showMissing;
   const parsed = parseEuros(value);
-  return value.trim() !== "" && (parsed === null || (unitPriceCents !== null && parsed > unitPriceCents));
+  return parsed === null || (unitPriceCents !== null && parsed > unitPriceCents);
 }
 
 type PromoInputProps = {
@@ -63,7 +67,7 @@ function PromoInput({ id, label, value, invalid, decimal = false, onValue }: Pro
   );
 }
 
-export function PromoEditor({ lineKey, productName, promo, quantity, unitPriceCents, onChange }: Props) {
+export function PromoEditor({ lineKey, productName, promo, quantity, unitPriceCents, showMissing = false, onChange }: Props) {
   const [editing, setEditing] = useState(false);
 
   if (!promo) {
@@ -100,7 +104,7 @@ export function PromoEditor({ lineKey, productName, promo, quantity, unitPriceCe
       id={id("percent")}
       label={`Pourcentage de remise pour ${productName}`}
       value={promo.percent}
-      invalid={countInvalid(promo.percent, PROMO_LIMITS.percent)}
+      invalid={countInvalid(promo.percent, PROMO_LIMITS.percent, showMissing)}
       onValue={(percent) => set({ percent })}
     />
   );
@@ -129,7 +133,7 @@ export function PromoEditor({ lineKey, productName, promo, quantity, unitPriceCe
               id={id("amount")}
               label={`Remise par article pour ${productName}`}
               value={promo.amount}
-              invalid={amountInvalid(promo.amount, unitPriceCents)}
+              invalid={amountInvalid(promo.amount, unitPriceCents, showMissing)}
               decimal
               onValue={(amount) => set({ amount })}
             />
@@ -150,7 +154,7 @@ export function PromoEditor({ lineKey, productName, promo, quantity, unitPriceCe
               id={id("nth")}
               label={`Rang de l’article remisé pour ${productName}`}
               value={promo.nth}
-              invalid={countInvalid(promo.nth, PROMO_LIMITS.nth)}
+              invalid={countInvalid(promo.nth, PROMO_LIMITS.nth, showMissing)}
               onValue={(nth) => set({ nth })}
             />
             <span>e à −</span>
@@ -164,7 +168,7 @@ export function PromoEditor({ lineKey, productName, promo, quantity, unitPriceCe
               id={id("buy")}
               label={`Articles achetés pour ${productName}`}
               value={promo.buy}
-              invalid={countInvalid(promo.buy, PROMO_LIMITS.items)}
+              invalid={countInvalid(promo.buy, PROMO_LIMITS.items, showMissing)}
               onValue={(buy) => set({ buy })}
             />
             <span>achetés =</span>
@@ -172,7 +176,7 @@ export function PromoEditor({ lineKey, productName, promo, quantity, unitPriceCe
               id={id("free")}
               label={`Articles offerts pour ${productName}`}
               value={promo.free}
-              invalid={countInvalid(promo.free, PROMO_LIMITS.items)}
+              invalid={countInvalid(promo.free, PROMO_LIMITS.items, showMissing)}
               onValue={(free) => set({ free })}
             />
             <span>offerts</span>

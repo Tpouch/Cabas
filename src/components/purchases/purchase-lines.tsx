@@ -17,9 +17,11 @@ type Props = {
   productsById: Map<string, ProductSummary>;
   onChange: (key: string, patch: Partial<DraftLine>) => void;
   onRemove: (key: string) => void;
+  /** The last save was refused: unfinished promotions show their empty fields. */
+  showMissing?: boolean;
 };
 
-export function PurchaseLines({ lines, productsById, onChange, onRemove }: Props) {
+export function PurchaseLines({ lines, productsById, onChange, onRemove, showMissing = false }: Props) {
   if (lines.length === 0) {
     return (
       <p className="rounded-md border border-dashed bg-card p-4 text-sm text-muted-foreground">
@@ -103,6 +105,7 @@ export function PurchaseLines({ lines, productsById, onChange, onRemove }: Props
               promo={line.promo}
               quantity={quantity}
               unitPriceCents={price}
+              showMissing={showMissing}
               onChange={(promo) => onChange(line.key, { promo })}
             />
           </li>
