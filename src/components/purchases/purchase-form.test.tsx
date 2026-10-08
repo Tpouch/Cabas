@@ -55,6 +55,55 @@ describe("PurchaseForm", () => {
     expect(screen.getAllByText(/1,98\s€/).length).toBeGreaterThan(0);
   });
 
+  async function addTwoPlusOne() {
+    await userEvent.click(screen.getByRole("button", { name: "Ajouter une promo sur Penne Rigate" }));
+    await userEvent.click(screen.getByRole("button", { name: "Achetés / offerts" }));
+    await userEvent.type(screen.getByLabelText("Articles achetés pour Penne Rigate"), "2");
+    await userEvent.type(screen.getByLabelText("Articles offerts pour Penne Rigate"), "1");
+  }
+
+  it("prefills the total after promotions and sends the promotion", async () => {
+    const props = renderForm();
+    await chooseStore();
+    await addPenne();
+    await userEvent.click(screen.getByRole("button", { name: "Augmenter" }));
+    await userEvent.click(screen.getByRole("button", { name: "Augmenter" }));
+    await addTwoPlusOne();
+    expect(screen.getByLabelText("Total payé")).toHaveValue("1,98");
+    expect(screen.getByText("Promos (1 article)").nextElementSibling).toHaveTextContent(/−0,99\s€/);
+
+    await userEvent.click(screen.getByRole("button", { name: "Enregistrer la course" }));
+    await vi.waitFor(() => expect(push).toHaveBeenCalledWith("/purchases/p1"));
+    const sent = (props.action as ReturnType<typeof vi.fn>).mock.calls[0]?.[1] as FormData;
+    expect(JSON.parse(sent.get("lines") as string)).toEqual([
+      { productId: "penne", quantity: 3, unitPriceCents: 99, promo: { kind: "BUY_GET_FREE", buy: 2, free: 1 } },
+    ]);
+  });
+
+  it("restores a draft line with its promotion", async () => {
+    window.localStorage.setItem(
+      DRAFT_STORAGE_KEY,
+      serializeDraft({
+        storeId: "lidl",
+        purchasedAt: "2026-10-02",
+        lines: [
+          {
+            key: "a",
+            productId: "penne",
+            quantity: "3",
+            unitPrice: "0,99",
+            promo: { kind: "BUY_GET_FREE", amount: "", percent: "", nth: "2", buy: "2", free: "1" },
+          },
+        ],
+        total: "",
+        totalEdited: false,
+      }),
+    );
+    renderForm();
+    expect(await screen.findByRole("button", { name: /2 achetés = 1 offert · −0,99\s€/ })).toBeInTheDocument();
+    expect(screen.getByLabelText("Total payé")).toHaveValue("1,98");
+  });
+
   it("keeps a total the user typed", async () => {
     renderForm();
     await chooseStore();
