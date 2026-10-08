@@ -1,5 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { isEmptyDraft, parseDraft, type PurchaseDraft, purchaseToDraft, serializeDraft } from "./purchase-draft";
+import type { Promo } from "@/domain/promo";
+import {
+  draftLineAmounts,
+  draftLinePayload,
+  type DraftPromo,
+  emptyDraftPromo,
+  isEmptyDraft,
+  parseDraft,
+  promoToDraft,
+  type PurchaseDraft,
+  purchaseToDraft,
+  readDraftPromo,
+  serializeDraft,
+} from "./purchase-draft";
 
 const known = { storeIds: new Set(["lidl"]), productIds: new Set(["penne", "pommes"]) };
 
@@ -63,5 +76,81 @@ describe("purchaseToDraft", () => {
       total: "4,97",
       totalEdited: true,
     });
+  });
+});
+
+const twoPlusOne: DraftPromo = { ...emptyDraftPromo(), kind: "BUY_GET_FREE", buy: "2", free: "1" };
+
+describe("draft promotions", () => {
+  it("round-trips a line with a half-typed promotion", () => {
+    const withPromo: PurchaseDraft = { ...draft, lines: [{ ...draft.lines[0]!, promo: { ...twoPlusOne, free: "" } }] };
+    expect(parseDraft(serializeDraft(withPromo), known)).toEqual(withPromo);
+  });
+
+  it("restores a draft saved before promotions existed", () => {
+    expect(parseDraft(serializeDraft(draft), known)?.lines[0]?.promo).toBeUndefined();
+  });
+
+  it.each<Promo>([
+    { kind: "AMOUNT_OFF_PER_UNIT", amountCents: 50 },
+    { kind: "PERCENT_OFF", percent: 30 },
+    { kind: "NTH_PERCENT_OFF", nth: 2, percent: 60 },
+    { kind: "BUY_GET_FREE", buy: 2, free: 1 },
+  ])("reads back %j from its typed values", (promo) => {
+    expect(readDraftPromo(promoToDraft(promo), 120)).toEqual(promo);
+  });
+
+  it.each<[string, DraftPromo]>([
+    ["a missing value", { ...twoPlusOne, free: "" }],
+    ["an unreadable value", { ...emptyDraftPromo(), kind: "PERCENT_OFF", percent: "abc" }],
+    ["an out-of-range value", { ...emptyDraftPromo(), kind: "PERCENT_OFF", percent: "150" }],
+    ["a discount above the price", { ...emptyDraftPromo(), amount: "1,50" }],
+  ])("gives no promotion while there is %s", (_, promo) => {
+    expect(readDraftPromo(promo, 120)).toBeNull();
+  });
+
+  it("sends the typed numbers, null when unreadable, so the server can explain", () => {
+    expect(
+      draftLinePayload({ key: "a", productId: "penne", quantity: "3", unitPrice: "1,20", promo: { ...twoPlusOne, free: "x" } }),
+    ).toEqual({
+      productId: "penne",
+      quantity: 3,
+      unitPriceCents: 120,
+      promo: { kind: "BUY_GET_FREE", buy: 2, free: null },
+    });
+    expect(draftLinePayload({ key: "a", productId: "penne", quantity: "3", unitPrice: "1,20" })).toEqual({
+      productId: "penne",
+      quantity: 3,
+      unitPriceCents: 120,
+    });
+  });
+
+  it("computes a line only once quantity and price are readable", () => {
+    expect(draftLineAmounts({ key: "a", productId: "penne", quantity: "3", unitPrice: "1,20", promo: twoPlusOne })).toEqual({
+      quantity: 3,
+      unitPriceCents: 120,
+      promo: { kind: "BUY_GET_FREE", buy: 2, free: 1 },
+    });
+    expect(draftLineAmounts({ key: "a", productId: "penne", quantity: "3", unitPrice: "" })).toBeNull();
+  });
+
+  it("turns a saved promotion into editable values", () => {
+    const purchase = {
+      id: "p1",
+      purchasedAt: new Date("2026-10-03T00:00:00.000Z"),
+      totalCents: 240,
+      receiptPath: null,
+      store: { id: "lidl", name: "Lidl", address: null, logoPath: null },
+      items: [
+        {
+          id: "i1",
+          quantity: 3,
+          unitPriceCents: 120,
+          promo: { kind: "BUY_GET_FREE", buy: 2, free: 1 } as const,
+          product: { id: "penne", name: "Penne", brand: null, photoPath: null, sizeValue: 500, sizeUnit: "G" as const },
+        },
+      ],
+    };
+    expect(purchaseToDraft(purchase).lines[0]?.promo).toEqual(twoPlusOne);
   });
 });

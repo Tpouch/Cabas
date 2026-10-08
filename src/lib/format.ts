@@ -1,8 +1,10 @@
 import { formatEuros } from "@/domain/money";
+import type { Promo } from "@/domain/promo";
 import type { SizeUnit } from "@/domain/types";
 import { measureLabel, pricePerMeasure } from "@/domain/unit-price";
 
 const DAY_MS = 86_400_000;
+const NBSP = "\u00a0";
 const decimal = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 2 });
 
 export function formatPerMeasure(priceCents: number, sizeValue: number, sizeUnit: SizeUnit): string {
@@ -59,4 +61,21 @@ const dayLabel = new Intl.DateTimeFormat("fr-FR", { weekday: "short", day: "nume
 export function formatDayLabel(date: Date): string {
   const label = dayLabel.format(date);
   return label.charAt(0).toLocaleUpperCase("fr-FR") + label.slice(1);
+}
+
+export function formatDiscount(cents: number): string {
+  return `−${formatEuros(cents)}`;
+}
+
+export function formatPromo(promo: Promo): string {
+  switch (promo.kind) {
+    case "AMOUNT_OFF_PER_UNIT":
+      return `${formatDiscount(promo.amountCents)} par article`;
+    case "PERCENT_OFF":
+      return `−${promo.percent}${NBSP}%`;
+    case "NTH_PERCENT_OFF":
+      return `Le ${promo.nth}e à −${promo.percent}${NBSP}%`;
+    case "BUY_GET_FREE":
+      return `${promo.buy} ${promo.buy > 1 ? "achetés" : "acheté"} = ${promo.free} ${promo.free > 1 ? "offerts" : "offert"}`;
+  }
 }
