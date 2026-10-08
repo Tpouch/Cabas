@@ -60,7 +60,8 @@ it can be shown and edited later, and recomputes it when the quantity changes.
 
 | Parameter | Range | Error message |
 |-----------|-------|---------------|
-| `amountCents` | integer, `1 ≤ amountCents ≤ unitPriceCents` | « La remise dépasse le prix de l’article. » |
+| `amountCents` | integer ≥ 1 | « Indique la remise par article, par exemple 0,50. » |
+| `amountCents` | `≤ unitPriceCents` | « La remise dépasse le prix de l’article. » |
 | `percent` | integer, 1 to 100 | « Indique un pourcentage entre 1 et 100. » |
 | `nth` | integer, 2 to 10 | « Indique un rang entre 2 et 10. » |
 | `buy`, `free` | integers, 1 to 20 | « Indique un nombre d’articles entre 1 et 20. » |
@@ -148,8 +149,10 @@ Mockups were approved during brainstorming
    - Le Ne à −%: `Le [2]e à −[60] %` (`nth` defaults to 2)
    - Achetés / offerts: `[2] achetés = [1] offert(s)`
    The line amount shows the gross struck through and the net, updated as the user types,
-   with the discount in green below. A "Retirer la promo" button removes it.
-3. **Applied** (collapsed when focus leaves the editor): a green summary
+   with the discount in green below. An "OK" button (disabled while a value is invalid)
+   folds the editor; a "Retirer la promo" button removes the promotion. (An explicit button
+   rather than "fold when focus leaves": Safari does not focus tapped buttons.)
+3. **Applied** (after "OK", or when a saved promotion is opened): a green summary
    « 🏷 2 achetés = 1 offert · −1,20 € »; tapping it reopens the editor.
 4. **Not reached**: an amber summary « 🏷 2 achetés = 1 offert · il faut 3 articles ».
 
