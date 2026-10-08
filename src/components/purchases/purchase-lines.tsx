@@ -4,10 +4,12 @@ import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatEuros, parseEuros } from "@/domain/money";
+import { lineDiscount } from "@/domain/promo";
 import { lineSubtotal, parseQuantity } from "@/domain/purchase";
 import { formatSize } from "@/lib/format";
-import type { DraftLine } from "@/lib/purchase-draft";
+import { draftLineAmounts, type DraftLine } from "@/lib/purchase-draft";
 import type { ProductSummary } from "@/server/repositories/products";
+import { PromoEditor } from "./promo-editor";
 import { QuantityStepper } from "./quantity-stepper";
 
 type Props = {
@@ -33,6 +35,9 @@ export function PurchaseLines({ lines, productsById, onChange, onRemove }: Props
         const name = product?.name ?? "Produit";
         const quantity = parseQuantity(line.quantity);
         const price = parseEuros(line.unitPrice);
+        const amounts = draftLineAmounts(line);
+        const gross = amounts && lineSubtotal(amounts.quantity, amounts.unitPriceCents);
+        const discount = amounts ? lineDiscount(amounts.quantity, amounts.unitPriceCents, amounts.promo) : 0;
         const priceId = `price-${line.key}`;
         return (
           <li key={line.key} className="grid gap-2 p-3">
@@ -80,9 +85,26 @@ export function PurchaseLines({ lines, productsById, onChange, onRemove }: Props
                 <span className="text-sm text-muted-foreground">€</span>
               </div>
               <p className="ml-auto font-mono font-bold">
-                {quantity !== null && price !== null ? formatEuros(lineSubtotal(quantity, price)) : "—"}
+                {gross === null ? (
+                  "—"
+                ) : discount > 0 ? (
+                  <>
+                    <s className="mr-1.5 font-normal text-muted-foreground">{formatEuros(gross)}</s>
+                    {formatEuros(gross - discount)}
+                  </>
+                ) : (
+                  formatEuros(gross)
+                )}
               </p>
             </div>
+            <PromoEditor
+              lineKey={line.key}
+              productName={name}
+              promo={line.promo}
+              quantity={quantity}
+              unitPriceCents={price}
+              onChange={(promo) => onChange(line.key, { promo })}
+            />
           </li>
         );
       })}
