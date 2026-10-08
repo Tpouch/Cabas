@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { formatQuantity, lineSubtotal, parseQuantity, stepQuantity, sumOfLines } from "./purchase";
+import {
+  formatQuantity,
+  lineNet,
+  lineSubtotal,
+  parseQuantity,
+  stepQuantity,
+  sumOfDiscounts,
+  sumOfLines,
+} from "./purchase";
 
 describe("lineSubtotal", () => {
   it("multiplies quantity by unit price and rounds to the cent", () => {
@@ -66,5 +74,34 @@ describe("stepQuantity", () => {
   it("never goes to zero or below", () => {
     expect(stepQuantity(1, -1)).toBe(1);
     expect(stepQuantity(0.5, -1)).toBe(0.5);
+  });
+});
+
+const twoPlusOne = { kind: "BUY_GET_FREE", buy: 2, free: 1 } as const;
+
+describe("lineNet", () => {
+  it("subtracts the promotion from the line amount", () => {
+    expect(lineNet({ quantity: 3, unitPriceCents: 120, promo: twoPlusOne })).toBe(240);
+  });
+
+  it("is the line amount without a promotion", () => {
+    expect(lineNet({ quantity: 1.2, unitPriceCents: 249 })).toBe(299);
+  });
+});
+
+describe("sums with promotions", () => {
+  const lines = [
+    { quantity: 3, unitPriceCents: 120, promo: twoPlusOne },
+    { quantity: 2, unitPriceCents: 99, promo: null },
+    { quantity: 2, unitPriceCents: 120, promo: twoPlusOne }, // not reached
+  ];
+
+  it("sums net amounts", () => {
+    expect(sumOfLines(lines)).toBe(240 + 198 + 240);
+  });
+
+  it("sums the discounts", () => {
+    expect(sumOfDiscounts(lines)).toBe(120);
+    expect(sumOfDiscounts([])).toBe(0);
   });
 });

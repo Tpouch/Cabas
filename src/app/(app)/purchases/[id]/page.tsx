@@ -2,9 +2,11 @@ import { ChevronLeft } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { LinesSummary } from "@/components/purchases/lines-summary";
+import { PromoStatus } from "@/components/purchases/promo-status";
 import { PurchaseActions } from "@/components/purchases/purchase-actions";
 import { formatEuros } from "@/domain/money";
-import { formatQuantity, lineSubtotal, sumOfLines } from "@/domain/purchase";
+import { formatQuantity, lineNet, sumOfLines } from "@/domain/purchase";
 import { formatLongDate, formatSize } from "@/lib/format";
 import { uploadUrl } from "@/lib/uploads";
 import { getPurchase } from "@/server/repositories/purchases";
@@ -52,19 +54,17 @@ export default async function PurchasePage({ params }: Props) {
                     {formatQuantity(item.quantity)} × {formatEuros(item.unitPriceCents)} ·{" "}
                     {formatSize(item.product.sizeValue, item.product.sizeUnit)}
                   </p>
+                  {item.promo && <PromoStatus promo={item.promo} quantity={item.quantity} unitPriceCents={item.unitPriceCents} />}
                 </div>
-                <span className="font-mono font-bold">{formatEuros(lineSubtotal(item.quantity, item.unitPriceCents))}</span>
+                <span className="font-mono font-bold">{formatEuros(lineNet(item))}</span>
               </li>
             ))}
           </ul>
           <dl className="grid gap-1 rounded-md border bg-card p-3 text-sm">
-            <div className="flex justify-between text-muted-foreground">
-              <dt>Somme des articles</dt>
-              <dd className="font-mono">{formatEuros(sum)}</dd>
-            </div>
+            <LinesSummary lines={purchase.items} />
             {gap !== 0 && (
               <div className="flex justify-between text-muted-foreground">
-                <dt>Écart (remises, oublis)</dt>
+                <dt>Écart (oublis, arrondis)</dt>
                 <dd className="font-mono">{formatEuros(gap)}</dd>
               </div>
             )}

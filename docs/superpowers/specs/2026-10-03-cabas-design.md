@@ -151,7 +151,8 @@ Index on `(productId, storeId, observedAt)`.
 | `purchaseId` | FK → Purchase, cascade delete | |
 | `productId` | FK → Product | |
 | `quantity` | decimal(10,3) > 0 | 2, or 1.2 for loose products |
-| `unitPriceCents` | integer > 0 | |
+| `unitPriceCents` | integer > 0 | regular price, before any promotion |
+| `promoKind` + parameters | optional | one promotion per line, see [promotions spec](2026-10-08-promotions-design.md) §5 |
 
 Each `PurchaseItem` owns exactly one `PriceObservation` (`source = PURCHASE`) with the same
 product, the purchase's store and date, and its `unitPriceCents`. Creating, editing or
@@ -222,9 +223,11 @@ lowest current price. Each row shows how old the price is ("il y a 3 j").
 
 ### 5.4 Purchase totals
 
-- Line subtotal = `round(quantity × unitPriceCents)`.
-- Sum of lines = sum of subtotals. The total paid is prefilled with this sum and can be
-  edited (discounts, items not recorded).
+- Line subtotal = `round(quantity × unitPriceCents)` (gross).
+- Line net = subtotal − promotion discount (see the
+  [promotions spec](2026-10-08-promotions-design.md) §4).
+- Sum of lines = sum of net amounts. The total paid is prefilled with this sum and can be
+  edited (items not recorded, rounding).
 - When a product is added to a purchase, its unit price is prefilled with its current price
   in the purchase's store, or left empty when none is known.
 
@@ -247,13 +250,14 @@ the "Moins cher" badge.
   percent. It is hidden when the previous month has no purchases.
 - **Purchase count** and **average basket** (`total / count`).
 - **12-month chart**: total spent for each of the 12 months ending with the selected month.
-- **Top 5 products**: by spend (sum of line subtotals), switchable to by quantity.
+- **Top 5 products**: by spend (sum of line net amounts), switchable to by quantity.
 - **Spend per store**: sum of `totalCents` per store, sorted descending.
 - **Saved vs highest price**: for each purchase item of the month, the reference price is
   the highest *current price as of the purchase date* among all stores (only observations
   with `observedAt ≤ purchasedAt` count, including this purchase's own). The item counts
   only when at least two stores have a price.
   `saved = max(0, reference − unitPriceCents) × quantity`, rounded, summed over the month.
+- **Saved through promotions**: sum of the promotion discounts of the month's lines.
 
 ## 6. Screens and flows
 
@@ -298,7 +302,7 @@ for the brainstorming companion; open them for layout reference.
 
 - A month selector (previous and next; next is disabled for the current month).
 - Indicators: total spent with the change vs the previous month, purchase count with the
-  average basket, and money saved vs the highest price.
+  average basket, and money saved, split into promotions and savings vs the highest price.
 - The 12-month bar chart (selected month highlighted), the top 5 products (spend or
   quantity) and spend per store (horizontal bars).
 - Mobile: stacked. Desktop: 3 indicators in a row, then the chart on the left with the top
@@ -316,7 +320,8 @@ A single page, filled top to bottom:
    stepper (decimals allowed) and the unit price, prefilled per §5.4. When there is no
    match, "Créer « … »" opens the **product sheet** (photo, name, brand, size value, size
    unit, price in the selected store) with a live price per unit of measure. Lines can be
-   removed. The running sum of lines is shown.
+   removed. Each line can carry one promotion (see the
+   [promotions spec](2026-10-08-promotions-design.md) §7). The running sum of lines is shown.
 4. **Total paid**: prefilled with the sum and editable.
 5. **Receipt photo**: camera capture on mobile, drag-and-drop or file picker on desktop.
 6. **Save**: creates the purchase, its items and their price observations in one
@@ -337,8 +342,8 @@ A single page, filled top to bottom:
 - History grouped by month (newest first), with each month's total. Mobile: receipt-style
   cards (store logo, store name, date, item count, total). Desktop: one table per month
   (date, store, items, receipt link, total).
-- Detail: store, date, the lines with subtotals, the sum of lines vs the total paid, and the
-  receipt photo (tap to enlarge). Actions: edit, delete (with confirmation).
+- Detail: store, date, the lines with subtotals and promotions, the promotion savings, the
+  sum of lines vs the total paid, and the receipt photo (tap to enlarge). Actions: edit, delete (with confirmation).
 
 ### 6.6 Products (`/products`)
 

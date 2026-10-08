@@ -1,5 +1,15 @@
 import { describe, expect, it } from "vitest";
-import { formatDayLabel, formatLongDate, formatMonthLabel, formatPerMeasure, formatPriceAge, formatShortDate, formatSize } from "./format";
+import {
+  formatDayLabel,
+  formatDiscount,
+  formatLongDate,
+  formatMonthLabel,
+  formatPerMeasure,
+  formatPriceAge,
+  formatPromo,
+  formatShortDate,
+  formatSize,
+} from "./format";
 
 const plain = (s: string) => s.replace(/[  ]/g, " ");
 const day = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
@@ -62,5 +72,23 @@ describe("formatDayLabel", () => {
   it("names the day briefly, without shifting the date", () => {
     expect(formatDayLabel(new Date("2026-10-03T00:00:00.000Z"))).toBe("Sam. 3 oct.");
     expect(formatDayLabel(new Date("2026-09-30T00:00:00.000Z"))).toBe("Mer. 30 sept.");
+  });
+});
+
+describe("formatPromo", () => {
+  it.each([
+    [{ kind: "AMOUNT_OFF_PER_UNIT", amountCents: 50 }, /^−0,50\s€ par article$/],
+    [{ kind: "PERCENT_OFF", percent: 30 }, /^−30\s%$/],
+    [{ kind: "NTH_PERCENT_OFF", nth: 2, percent: 60 }, /^Le 2e à −60\s%$/],
+    [{ kind: "BUY_GET_FREE", buy: 2, free: 1 }, /^2 achetés = 1 offert$/],
+    [{ kind: "BUY_GET_FREE", buy: 1, free: 2 }, /^1 acheté = 2 offerts$/],
+  ] as const)("writes %j", (promo, expected) => {
+    expect(formatPromo(promo)).toMatch(expected);
+  });
+});
+
+describe("formatDiscount", () => {
+  it("writes a discount with a minus sign", () => {
+    expect(formatDiscount(120)).toMatch(/^−1,20\s€$/);
   });
 });

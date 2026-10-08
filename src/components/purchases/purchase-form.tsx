@@ -13,11 +13,13 @@ import { StoreForm } from "@/components/stores/store-form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { formatEuros, formatEurosInput, parseEuros } from "@/domain/money";
-import { formatQuantity, parseQuantity, type PurchaseLine, stepQuantity, sumOfLines } from "@/domain/purchase";
+import { formatQuantity, parseQuantity, stepQuantity, sumOfLines } from "@/domain/purchase";
 import { formatSize } from "@/lib/format";
 import {
   DRAFT_STORAGE_KEY,
   type DraftLine,
+  draftLineAmounts,
+  draftLinePayload,
   isEmptyDraft,
   parseDraft,
   type PurchaseDraft,
@@ -28,6 +30,7 @@ import type { ActionResult, ActionState } from "@/server/actions/result";
 import type { ProductSummary } from "@/server/repositories/products";
 import type { PriceIndex } from "@/server/repositories/purchases";
 import type { StoreSummary } from "@/server/repositories/stores";
+import { LinesSummary } from "./lines-summary";
 import { PurchaseLines } from "./purchase-lines";
 import { ReceiptField } from "./receipt-field";
 
@@ -128,13 +131,11 @@ function PurchaseEditor({
 
   const productsById = useMemo(() => new Map(products.map((product) => [product.id, product])), [products]);
   const store = stores.find((candidate) => candidate.id === draft.storeId) ?? null;
-  const lines = draft.lines.map((line) => ({
-    productId: line.productId,
-    quantity: parseQuantity(line.quantity),
-    unitPriceCents: parseEuros(line.unitPrice),
-  }));
-  const sum = sumOfLines(lines.filter((line): line is PurchaseLine => line.quantity !== null && line.unitPriceCents !== null));
+  const amounts = draft.lines.flatMap((line) => draftLineAmounts(line) ?? []);
+  const sum = sumOfLines(amounts);
   const total = draft.totalEdited ? draft.total : sum > 0 ? formatEurosInput(sum) : "";
+  const totalCents = parseEuros(total);
+  const gap = totalCents === null ? 0 : totalCents - sum;
 
   const { state, errors, pending, onSubmit, formRef } = useFormAction(action, (saved) => {
     if (mode === "create") clearDraft();
@@ -229,7 +230,13 @@ function PurchaseEditor({
               </h2>
               <span className="font-mono text-sm">{formatEuros(sum)}</span>
             </div>
-            <PurchaseLines lines={draft.lines} productsById={productsById} onChange={updateLine} onRemove={removeLine} />
+            <PurchaseLines
+              lines={draft.lines}
+              productsById={productsById}
+              onChange={updateLine}
+              onRemove={removeLine}
+              showMissing={Boolean(errors.lines)}
+            />
             <EntityCombobox
               id="productPicker"
               name="productPicker"
@@ -245,15 +252,20 @@ function PurchaseEditor({
               onCreate={setNewProductName}
             />
             <FieldError id="lines-error" errors={errors.lines} />
-            <input type="hidden" name="lines" value={JSON.stringify(lines)} />
+            <input type="hidden" name="lines" value={JSON.stringify(draft.lines.map(draftLinePayload))} />
           </section>
         </div>
 
         <aside className="grid gap-4 rounded-md border bg-card p-4 lg:sticky lg:top-4">
-          <div className="flex justify-between text-sm text-muted-foreground">
-            <span>Somme des articles</span>
-            <span className="font-mono">{formatEuros(sum)}</span>
-          </div>
+          <dl className="grid gap-1 text-sm">
+            <LinesSummary lines={amounts} />
+            {gap !== 0 && (
+              <div className="flex justify-between text-muted-foreground">
+                <dt>Écart (oublis, arrondis)</dt>
+                <dd className="font-mono">{formatEuros(gap)}</dd>
+              </div>
+            )}
+          </dl>
           <div className="grid gap-1.5">
             <Label htmlFor="total">Total payé</Label>
             <Input
