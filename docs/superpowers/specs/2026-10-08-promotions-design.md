@@ -171,7 +171,8 @@ is refused with the §3 message.
 ### Purchase detail, line
 
 The quantity × regular unit price line as today, the net amount on the right, and the
-promotion label with its discount (green) or « non atteinte » (amber) below.
+promotion label with its discount (green) or « il faut N articles » (amber) below, as in
+the form.
 
 ## 8. Effects on later plans
 
