@@ -129,6 +129,16 @@ describe("PurchaseForm", () => {
     expect(screen.getByLabelText("Total payé")).toHaveValue("0,50");
   });
 
+  it("shows the gap between the sum and a total the user typed", async () => {
+    renderForm();
+    await chooseStore();
+    await addPenne();
+    expect(screen.queryByText("Écart (oublis, arrondis)")).not.toBeInTheDocument();
+    await userEvent.clear(screen.getByLabelText("Total payé"));
+    await userEvent.type(screen.getByLabelText("Total payé"), "0,50");
+    expect(screen.getByText("Écart (oublis, arrondis)").nextElementSibling).toHaveTextContent(/-0,49\s€/);
+  });
+
   it("fills empty prices when the store is chosen after the items", async () => {
     renderForm();
     await addPenne();

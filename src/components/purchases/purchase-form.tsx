@@ -12,7 +12,7 @@ import { ProductForm } from "@/components/products/product-form";
 import { StoreForm } from "@/components/stores/store-form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { formatEuros, formatEurosInput } from "@/domain/money";
+import { formatEuros, formatEurosInput, parseEuros } from "@/domain/money";
 import { formatQuantity, parseQuantity, stepQuantity, sumOfLines } from "@/domain/purchase";
 import { formatSize } from "@/lib/format";
 import {
@@ -134,6 +134,8 @@ function PurchaseEditor({
   const amounts = draft.lines.flatMap((line) => draftLineAmounts(line) ?? []);
   const sum = sumOfLines(amounts);
   const total = draft.totalEdited ? draft.total : sum > 0 ? formatEurosInput(sum) : "";
+  const totalCents = parseEuros(total);
+  const gap = totalCents === null ? 0 : totalCents - sum;
 
   const { state, errors, pending, onSubmit, formRef } = useFormAction(action, (saved) => {
     if (mode === "create") clearDraft();
@@ -257,6 +259,12 @@ function PurchaseEditor({
         <aside className="grid gap-4 rounded-md border bg-card p-4 lg:sticky lg:top-4">
           <dl className="grid gap-1 text-sm">
             <LinesSummary lines={amounts} />
+            {gap !== 0 && (
+              <div className="flex justify-between text-muted-foreground">
+                <dt>Écart (oublis, arrondis)</dt>
+                <dd className="font-mono">{formatEuros(gap)}</dd>
+              </div>
+            )}
           </dl>
           <div className="grid gap-1.5">
             <Label htmlFor="total">Total payé</Label>
