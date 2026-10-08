@@ -131,3 +131,37 @@ describe("deletePurchaseAction", () => {
     expect(await deletePurchaseAction(created.data.id)).toMatchObject({ ok: false, message: "Cette course n'existe plus." });
   });
 });
+
+describe("promotions", () => {
+  async function withPromo(promo: unknown, unitPriceCents = 120) {
+    const { fields, penne } = await setup();
+    return createPurchaseAction(
+      null,
+      form({ ...fields, total: "2,40", lines: JSON.stringify([{ productId: penne.id, quantity: 3, unitPriceCents, promo }]) }),
+    );
+  }
+
+  it("records a line's promotion", async () => {
+    const result = await withPromo({ kind: "BUY_GET_FREE", buy: 2, free: 1 });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect((await getPurchase(result.data.id))?.items[0]?.promo).toEqual({ kind: "BUY_GET_FREE", buy: 2, free: 1 });
+  });
+
+  it.each([
+    [{ kind: "PERCENT_OFF", percent: 0 }, "Indique un pourcentage entre 1 et 100."],
+    [{ kind: "PERCENT_OFF", percent: 101 }, "Indique un pourcentage entre 1 et 100."],
+    [{ kind: "PERCENT_OFF", percent: null }, "Indique un pourcentage entre 1 et 100."],
+    [{ kind: "NTH_PERCENT_OFF", nth: 1, percent: 60 }, "Indique un rang entre 2 et 10."],
+    [{ kind: "BUY_GET_FREE", buy: 0, free: 1 }, "Indique un nombre d’articles entre 1 et 20."],
+    [{ kind: "BUY_GET_FREE", buy: 2, free: null }, "Indique un nombre d’articles entre 1 et 20."],
+    [{ kind: "AMOUNT_OFF_PER_UNIT", amountCents: null }, "Indique la remise par article, par exemple 0,50."],
+    [{ kind: "AMOUNT_OFF_PER_UNIT", amountCents: 121 }, "La remise dépasse le prix de l’article."],
+    [{ kind: "BOGO" }, "Vérifie la quantité et le prix de chaque article."],
+    [{ kind: "PERCENT_OFF", percent: 30, buy: 2 }, "Vérifie la quantité et le prix de chaque article."],
+  ])("refuses %j", async (promo, message) => {
+    const result = await withPromo(promo);
+    expect(result).toMatchObject({ ok: false, errors: { lines: [message] } });
+    expect(await db().purchase.count()).toBe(0);
+  });
+});
