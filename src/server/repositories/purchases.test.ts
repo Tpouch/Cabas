@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { Promo } from "@/domain/promo";
 import { deleteProductAction } from "@/server/actions/products";
 import { deleteStoreAction } from "@/server/actions/stores";
 import { db } from "@/server/db";
@@ -176,5 +177,82 @@ describe("records used by purchases", () => {
       lines: [{ productId: penne.id, quantity: 1, unitPriceCents: 99 }],
     });
     expect(await deleteStoreAction(lidl.id)).toMatchObject({ ok: false, message: expect.stringContaining("ne peut pas être supprimé") });
+  });
+});
+
+describe("promotions on purchase lines", () => {
+  const promos: Promo[] = [
+    { kind: "AMOUNT_OFF_PER_UNIT", amountCents: 20 },
+    { kind: "PERCENT_OFF", percent: 30 },
+    { kind: "NTH_PERCENT_OFF", nth: 2, percent: 60 },
+    { kind: "BUY_GET_FREE", buy: 2, free: 1 },
+  ];
+
+  it.each(promos)("keeps the promotion %j and the regular price", async (promo) => {
+    const { lidl, penne } = await setup();
+    const { id } = await createPurchase({
+      storeId: lidl.id,
+      purchasedAt: day("2026-10-03"),
+      totalCents: 240,
+      receiptPath: null,
+      lines: [{ productId: penne.id, quantity: 3, unitPriceCents: 120, promo }],
+    });
+    expect((await getPurchase(id))?.items[0]?.promo).toEqual(promo);
+    expect((await db().priceObservation.findFirstOrThrow()).priceCents).toBe(120);
+  });
+
+  it("reads a line without a promotion as null", async () => {
+    const { lidl, penne } = await setup();
+    const { id } = await createPurchase({
+      storeId: lidl.id,
+      purchasedAt: day("2026-10-03"),
+      totalCents: 99,
+      receiptPath: null,
+      lines: [{ productId: penne.id, quantity: 1, unitPriceCents: 99 }],
+    });
+    expect((await getPurchase(id))?.items[0]?.promo).toBeNull();
+  });
+
+  it("replaces or removes promotions when a purchase is edited", async () => {
+    const { lidl, penne, apples } = await setup();
+    const base = { storeId: lidl.id, purchasedAt: day("2026-10-03"), totalCents: 240, receiptPath: null };
+    const { id } = await createPurchase({
+      ...base,
+      lines: [
+        { productId: penne.id, quantity: 3, unitPriceCents: 120, promo: { kind: "BUY_GET_FREE", buy: 2, free: 1 } },
+        { productId: apples.id, quantity: 1, unitPriceCents: 249, promo: { kind: "PERCENT_OFF", percent: 30 } },
+      ],
+    });
+    await updatePurchase(id, {
+      ...base,
+      lines: [
+        { productId: penne.id, quantity: 3, unitPriceCents: 120, promo: { kind: "PERCENT_OFF", percent: 10 } },
+        { productId: apples.id, quantity: 1, unitPriceCents: 249 },
+      ],
+    });
+    const items = (await getPurchase(id))?.items ?? [];
+    expect(items.map((item) => [item.product.name, item.promo])).toEqual([
+      ["Penne", { kind: "PERCENT_OFF", percent: 10 }],
+      ["Pommes", null],
+    ]);
+    expect((await listStorePrices(penne.id)).map((r) => r.priceCents)).toEqual([120]);
+  });
+
+  it.each([
+    ["a kind without its parameter", { promoKind: "PERCENT_OFF" as const }],
+    ["a parameter of another kind", { promoKind: "PERCENT_OFF" as const, promoPercent: 30, promoBuy: 2 }],
+    ["a parameter without a kind", { promoPercent: 30 }],
+    ["an out-of-range value", { promoKind: "NTH_PERCENT_OFF" as const, promoNth: 1, promoPercent: 60 }],
+  ])("refuses %s in the database", async (_, columns) => {
+    const { lidl, penne } = await setup();
+    const { id } = await createPurchase({
+      storeId: lidl.id,
+      purchasedAt: day("2026-10-03"),
+      totalCents: 99,
+      receiptPath: null,
+      lines: [{ productId: penne.id, quantity: 1, unitPriceCents: 99 }],
+    });
+    const item = await db().purchaseItem.findFirstOrThrow({ where: { purchaseId: id } });
+    await expect(db().purchaseItem.update({ where: { id: item.id }, data: columns })).rejects.toThrow();
   });
 });

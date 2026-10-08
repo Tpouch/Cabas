@@ -51,6 +51,7 @@ describe("purchaseToDraft", () => {
           id: "i1",
           quantity: 1.2,
           unitPriceCents: 249,
+          promo: null,
           product: { id: "pommes", name: "Pommes", brand: null, photoPath: null, sizeValue: 1000, sizeUnit: "G" as const },
         },
       ],
