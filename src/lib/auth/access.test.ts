@@ -56,7 +56,18 @@ describe("decideAccess", () => {
   const request = (pathname: string, authenticated: boolean, method = "GET", search = "") =>
     decideAccess({ pathname, search, method, authenticated });
 
-  it.each(["/login", "/icon.svg", "/apple-icon.png", "/favicon.ico", "/_next/static/chunks/a.js", "/_next/image"])(
+  it.each([
+    "/login",
+    "/icon.svg",
+    "/apple-icon.png",
+    "/favicon.ico",
+    "/manifest.webmanifest",
+    "/icons/icon-192.png",
+    "/icons/icon-512.png",
+    "/icons/icon-maskable-512.png",
+    "/_next/static/chunks/a.js",
+    "/_next/image",
+  ])(
     "lets anyone reach %s",
     (pathname) => {
       expect(isPublicPath(pathname)).toBe(true);
@@ -83,7 +94,7 @@ describe("decideAccess", () => {
     expect(request("/login", true, "POST")).toEqual({ kind: "allow" });
   });
 
-  it.each(["/loginx", "/icon.svg.png", "/_next/data/x.json"])("does not treat %s as public", (pathname) => {
+  it.each(["/loginx", "/icon.svg.png", "/_next/data/x.json", "/icons/other.png"])("does not treat %s as public", (pathname) => {
     expect(isPublicPath(pathname)).toBe(false);
   });
 });
