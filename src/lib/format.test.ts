@@ -10,6 +10,7 @@ import {
   formatPriceAge,
   formatPromo,
   formatShortDate,
+  formatShortMonth,
   formatSize,
 } from "./format";
 
@@ -110,5 +111,12 @@ describe("formatChange", () => {
 
   it("shows no sign when nothing changed", () => {
     expect(formatChange(0)).toBe("0 %");
+  });
+});
+
+describe("formatShortMonth", () => {
+  it("abbreviates the month for chart axes", () => {
+    expect(formatShortMonth("2026-10")).toBe("oct.");
+    expect(formatShortMonth("2026-05")).toBe("mai");
   });
 });

@@ -90,3 +90,9 @@ export function formatChange(percent: number): string {
   const sign = percent > 0 ? "+" : percent < 0 ? "−" : "";
   return `${sign}${Math.abs(percent)}${NBSP}%`;
 }
+
+const shortMonth = new Intl.DateTimeFormat("fr-FR", { month: "short", timeZone: "UTC" });
+
+export function formatShortMonth(month: string): string {
+  return shortMonth.format(new Date(`${month}-01T00:00:00.000Z`));
+}
