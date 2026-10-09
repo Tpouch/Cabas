@@ -79,3 +79,14 @@ export function formatPromo(promo: Promo): string {
       return `${promo.buy} ${promo.buy > 1 ? "achetés" : "acheté"} = ${promo.free} ${promo.free > 1 ? "offerts" : "offert"}`;
   }
 }
+
+const monthName = new Intl.DateTimeFormat("fr-FR", { month: "long", timeZone: "UTC" });
+
+export function formatMonthName(month: string): string {
+  return monthName.format(new Date(`${month}-01T00:00:00.000Z`));
+}
+
+export function formatChange(percent: number): string {
+  const sign = percent > 0 ? "+" : percent < 0 ? "−" : "";
+  return `${sign}${Math.abs(percent)}${NBSP}%`;
+}
