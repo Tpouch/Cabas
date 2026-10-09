@@ -19,7 +19,17 @@ export function safeNextPath(next: string | null | undefined): string {
   return path;
 }
 
-const PUBLIC_FILES = new Set(["/login", "/icon.svg", "/apple-icon.png", "/favicon.ico"]);
+/** Browsers fetch the manifest and install icons without cookies: they reveal only the app name and logo. */
+const PUBLIC_FILES = new Set([
+  "/login",
+  "/icon.svg",
+  "/apple-icon.png",
+  "/favicon.ico",
+  "/manifest.webmanifest",
+  "/icons/icon-192.png",
+  "/icons/icon-512.png",
+  "/icons/icon-maskable-512.png",
+]);
 
 export function isPublicPath(pathname: string): boolean {
   return PUBLIC_FILES.has(pathname) || pathname.startsWith("/_next/static/") || pathname === "/_next/image";

@@ -56,7 +56,7 @@ export type PriceIndex = Record<string, Record<string, number>>;
 
 const storeSummary = { select: { id: true, name: true, address: true, logoPath: true } } as const;
 
-type PromoColumns = {
+export type PromoColumns = {
   promoKind: PromoKind | null;
   promoAmountCents: number | null;
   promoPercent: number | null;
@@ -94,7 +94,7 @@ function required(value: number | null): number {
   return value;
 }
 
-function promoFromColumns(row: PromoColumns): Promo | null {
+export function promoFromColumns(row: PromoColumns): Promo | null {
   switch (row.promoKind) {
     case null:
       return null;

@@ -1,13 +1,16 @@
 import { describe, expect, it } from "vitest";
 import {
+  formatChange,
   formatDayLabel,
   formatDiscount,
   formatLongDate,
   formatMonthLabel,
+  formatMonthName,
   formatPerMeasure,
   formatPriceAge,
   formatPromo,
   formatShortDate,
+  formatShortMonth,
   formatSize,
 } from "./format";
 
@@ -90,5 +93,30 @@ describe("formatPromo", () => {
 describe("formatDiscount", () => {
   it("writes a discount with a minus sign", () => {
     expect(formatDiscount(120)).toMatch(/^−1,20\s€$/);
+  });
+});
+
+describe("formatMonthName", () => {
+  it("names the month in lower case", () => {
+    expect(formatMonthName("2026-09")).toBe("septembre");
+    expect(formatMonthName("2026-04")).toBe("avril");
+  });
+});
+
+describe("formatChange", () => {
+  it("signs a rise and a drop with a typographic minus", () => {
+    expect(formatChange(12)).toBe("+12 %");
+    expect(formatChange(-8)).toBe("−8 %");
+  });
+
+  it("shows no sign when nothing changed", () => {
+    expect(formatChange(0)).toBe("0 %");
+  });
+});
+
+describe("formatShortMonth", () => {
+  it("abbreviates the month for chart axes", () => {
+    expect(formatShortMonth("2026-10")).toBe("oct.");
+    expect(formatShortMonth("2026-05")).toBe("mai");
   });
 });
