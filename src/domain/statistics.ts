@@ -1,5 +1,5 @@
 import type { Promo } from "./promo";
-import { sumOfDiscounts } from "./purchase";
+import { lineNet, sumOfDiscounts } from "./purchase";
 
 export type StatLine = { productId: string; productName: string; quantity: number; unitPriceCents: number; promo: Promo | null };
 export type StatPurchase = { purchasedAt: Date; storeId: string; storeName: string; totalCents: number; lines: StatLine[] };
@@ -26,4 +26,32 @@ export function promotionSavings(purchases: StatPurchase[]): number {
 export function fillMonths(months: string[], totals: MonthTotal[]): MonthTotal[] {
   const byMonth = new Map(totals.map((total) => [total.month, total.totalCents]));
   return months.map((month) => ({ month, totalCents: byMonth.get(month) ?? 0 }));
+}
+
+export type ProductRank = { productId: string; productName: string; spendCents: number; quantity: number };
+export type StoreSpend = { storeId: string; storeName: string; totalCents: number };
+
+const byName = (a: string, b: string) => a.localeCompare(b, "fr");
+
+export function topProducts(purchases: StatPurchase[], by: "spend" | "quantity", limit = 5): ProductRank[] {
+  const ranks = new Map<string, ProductRank>();
+  for (const line of purchases.flatMap((purchase) => purchase.lines)) {
+    const rank = ranks.get(line.productId) ?? { productId: line.productId, productName: line.productName, spendCents: 0, quantity: 0 };
+    rank.spendCents += lineNet(line);
+    // Quantities have at most 3 decimals: round away float noise (0.1 + 0.2).
+    rank.quantity = Math.round((rank.quantity + line.quantity) * 1000) / 1000;
+    ranks.set(line.productId, rank);
+  }
+  const value = (rank: ProductRank) => (by === "spend" ? rank.spendCents : rank.quantity);
+  return [...ranks.values()].sort((a, b) => value(b) - value(a) || byName(a.productName, b.productName)).slice(0, limit);
+}
+
+export function spendPerStore(purchases: StatPurchase[]): StoreSpend[] {
+  const stores = new Map<string, StoreSpend>();
+  for (const purchase of purchases) {
+    const store = stores.get(purchase.storeId) ?? { storeId: purchase.storeId, storeName: purchase.storeName, totalCents: 0 };
+    store.totalCents += purchase.totalCents;
+    stores.set(purchase.storeId, store);
+  }
+  return [...stores.values()].sort((a, b) => b.totalCents - a.totalCents || byName(a.storeName, b.storeName));
 }

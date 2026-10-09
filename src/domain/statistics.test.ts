@@ -4,8 +4,10 @@ import {
   changeVsPrevious,
   fillMonths,
   promotionSavings,
+  spendPerStore,
   type StatLine,
   type StatPurchase,
+  topProducts,
   totalSpent,
 } from "./statistics";
 
@@ -79,5 +81,83 @@ describe("fillMonths", () => {
 
   it("ignores totals outside the months", () => {
     expect(fillMonths(["2026-10"], [{ month: "2025-10", totalCents: 500 }])).toEqual([{ month: "2026-10", totalCents: 0 }]);
+  });
+});
+
+describe("topProducts", () => {
+  it("ranks products by net spend, after promotions", () => {
+    const purchases = [
+      purchase({
+        lines: [
+          line({ productId: "penne", productName: "Penne", quantity: 2, promo: { kind: "PERCENT_OFF", percent: 30 } }),
+          line({ productId: "riz", productName: "Riz", unitPriceCents: 150 }),
+        ],
+      }),
+    ];
+    expect(topProducts(purchases, "spend").map((p) => [p.productName, p.spendCents])).toEqual([
+      ["Riz", 150],
+      ["Penne", 140],
+    ]);
+  });
+
+  it("adds up a product bought in several purchases", () => {
+    const purchases = [purchase(), purchase({ lines: [line({ quantity: 3 })] })];
+    expect(topProducts(purchases, "spend")).toEqual([{ productId: "penne", productName: "Penne", spendCents: 400, quantity: 4 }]);
+  });
+
+  it("ranks products by quantity, keeping decimals exact", () => {
+    const purchases = [
+      purchase({
+        lines: [
+          line({ productId: "pommes", productName: "Pommes", quantity: 0.1 }),
+          line({ productId: "pommes", productName: "Pommes", quantity: 0.2 }),
+          line({ productId: "riz", productName: "Riz", quantity: 2 }),
+        ],
+      }),
+    ];
+    expect(topProducts(purchases, "quantity").map((p) => [p.productName, p.quantity])).toEqual([
+      ["Riz", 2],
+      ["Pommes", 0.3],
+    ]);
+  });
+
+  it("breaks ties by product name in French order", () => {
+    const purchases = [
+      purchase({
+        lines: [line({ productId: "f", productName: "Farine" }), line({ productId: "e", productName: "Éclairs" })],
+      }),
+    ];
+    expect(topProducts(purchases, "spend").map((p) => p.productName)).toEqual(["Éclairs", "Farine"]);
+  });
+
+  it("keeps the 5 first products only", () => {
+    const lines = ["a", "b", "c", "d", "e", "f"].map((id, i) => line({ productId: id, productName: id, unitPriceCents: 100 + i }));
+    expect(topProducts([purchase({ lines })], "spend").map((p) => p.productId)).toEqual(["f", "e", "d", "c", "b"]);
+  });
+
+  it("is empty without purchases", () => {
+    expect(topProducts([], "spend")).toEqual([]);
+  });
+});
+
+describe("spendPerStore", () => {
+  it("adds up the totals paid per store, highest first", () => {
+    const purchases = [
+      purchase({ storeId: "lidl", storeName: "Lidl", totalCents: 1000 }),
+      purchase({ storeId: "auchan", storeName: "Auchan", totalCents: 1500 }),
+      purchase({ storeId: "lidl", storeName: "Lidl", totalCents: 800 }),
+    ];
+    expect(spendPerStore(purchases)).toEqual([
+      { storeId: "lidl", storeName: "Lidl", totalCents: 1800 },
+      { storeId: "auchan", storeName: "Auchan", totalCents: 1500 },
+    ]);
+  });
+
+  it("breaks ties by store name", () => {
+    const purchases = [
+      purchase({ storeId: "lidl", storeName: "Lidl", totalCents: 1000 }),
+      purchase({ storeId: "auchan", storeName: "Auchan", totalCents: 1000 }),
+    ];
+    expect(spendPerStore(purchases).map((s) => s.storeName)).toEqual(["Auchan", "Lidl"]);
   });
 });
