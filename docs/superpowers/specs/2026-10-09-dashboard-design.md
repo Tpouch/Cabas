@@ -188,7 +188,7 @@ voir tes dépenses.", button "Enregistrer une course" → `/purchases/new`.
 
 - `src/app/manifest.ts` (Next.js metadata route, served at `/manifest.webmanifest`):
   `name` and `short_name` "cabas", `description`, `lang: "fr-FR"`, `start_url: "/"`,
-  `display: "standalone"`, `background_color: "#fbf7f0"`, `theme_color: "#c2410c"`, icons
+  `display: "standalone"`, `background_color: "#fbf7f0"`, `theme_color: "#fbf7f0"` (matches the page's `viewport.themeColor`, so the installed status bar blends with the page), icons
   192 px and 512 px (PNG, also `purpose: "maskable"` for the 512 px one) plus the SVG.
 - The 192 px and 512 px PNGs are generated once from `src/app/icon.svg` with sharp and
   committed under `public/icons/`.
