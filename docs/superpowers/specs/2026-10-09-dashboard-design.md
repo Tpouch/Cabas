@@ -1,7 +1,7 @@
 # cabas — Dashboard and release
 
 - **Date:** 2026-10-09
-- **Status:** Draft, awaiting review
+- **Status:** Approved
 - **Branch:** `feat/dashboard`
 - **Implements:** [`2026-10-03-cabas-design.md`](2026-10-03-cabas-design.md) §2 (PWA manifest),
   §3 (backup), §5.6, §6.3, and [`2026-10-08-promotions-design.md`](2026-10-08-promotions-design.md) §8

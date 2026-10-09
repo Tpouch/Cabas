@@ -67,6 +67,39 @@ Set `COOKIE_SECURE=false` and `APP_BIND=127.0.0.1` in `.env` (plain HTTP on this
 docker compose --env-file .env up -d --build    # http://127.0.0.1:<APP_PORT>
 ```
 
+### Backup and restore
+
+`scripts/backup.sh [output-dir]` writes a database dump (`cabas-db-YYYYMMDD-HHMM.dump`,
+`pg_dump` custom format) and an archive of the uploaded images
+(`cabas-uploads-YYYYMMDD-HHMM.tar.gz`), then prints their paths. Copy the script to the
+server and run it from the Compose project directory. On Coolify, find that directory with:
+
+```bash
+docker inspect <app container> --format '{{ index .Config.Labels "com.docker.compose.project.working_dir" }}'
+```
+
+Daily at 03:00, keeping 14 days (`crontab -e` on the server):
+
+```cron
+0 3 * * * cd /path/to/project && /usr/local/bin/cabas-backup.sh /srv/backups/cabas && find /srv/backups/cabas -name 'cabas-*' -mtime +14 -delete
+```
+
+Restore, from the same directory (this replaces the current data):
+
+```bash
+docker compose exec -T db sh -c 'pg_restore --clean --if-exists -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < cabas-db-YYYYMMDD-HHMM.dump
+docker compose exec -T app sh -c 'rm -rf /data/uploads/* && tar xzf - -C /data' < cabas-uploads-YYYYMMDD-HHMM.tar.gz
+docker compose restart app
+```
+
+### Install on a phone
+
+The app has a web app manifest and can be added to the home screen. It needs the network:
+there is no offline mode.
+
+- iPhone (Safari): Partager › Sur l’écran d’accueil.
+- Android (Chrome): menu ⋮ › Installer l’application.
+
 ### Password
 
 The app asks for one password. Generate its hash and a session secret, then put both in `.env`

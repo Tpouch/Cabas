@@ -11,4 +11,4 @@ assumptions.
 | 2 | [Purchases](2026-10-04-cabas-plan-2-purchases.md) | New purchase form with draft, purchase history, detail, edit and delete, purchase-driven price observations | §4 (Purchase, PurchaseItem), §5.4, §6.4, §6.5 |
 | 2b | [Promotions](2026-10-08-promotions.md) | One promotion per purchase line (− € per item, − %, le Ne à −X %, N achetés = M offerts), net totals, regular prices kept for comparison | [Promotions spec](../specs/2026-10-08-promotions-design.md) |
 | 3 | Shopping lists | Lists, per-store estimate, check-off, conversion into a purchase | §4 (ShoppingList, ShoppingListItem), §5.5, §6.9 |
-| 4 | Dashboard & release | Monthly statistics, savings, charts, PWA manifest, README and backup | §5.6, §6.3, §3 (backup) |
+| 4 | [Dashboard & release](2026-10-09-dashboard.md) | Monthly statistics, savings, charts, PWA manifest, README and backup | §5.6, §6.3, §3 (backup); [Dashboard spec](../specs/2026-10-09-dashboard-design.md) |
