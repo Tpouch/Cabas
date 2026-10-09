@@ -1,3 +1,5 @@
+import { latestPricesByStore, type PriceObservationInput } from "./latest-prices";
+import { multiplyByQuantity } from "./line-amount";
 import type { Promo } from "./promo";
 import { lineNet, sumOfDiscounts } from "./purchase";
 
@@ -54,4 +56,22 @@ export function spendPerStore(purchases: StatPurchase[]): StoreSpend[] {
     stores.set(purchase.storeId, store);
   }
   return [...stores.values()].sort((a, b) => b.totalCents - a.totalCents || byName(a.storeName, b.storeName));
+}
+
+export type ProductObservation = PriceObservationInput & { productId: string };
+
+/** Spec §5.6: against the highest current price as of the purchase date, when at least two stores have one. */
+export function savingsVsHighestPrice(purchases: StatPurchase[], observations: ProductObservation[]): number {
+  const byProduct = Map.groupBy(observations, (observation) => observation.productId);
+  let saved = 0;
+  for (const purchase of purchases) {
+    for (const line of purchase.lines) {
+      const known = (byProduct.get(line.productId) ?? []).filter((o) => o.observedAt.getTime() <= purchase.purchasedAt.getTime());
+      const prices = latestPricesByStore(known);
+      if (prices.length < 2) continue;
+      const reference = Math.max(...prices.map((price) => price.priceCents));
+      saved += multiplyByQuantity(line.quantity, Math.max(0, reference - line.unitPriceCents));
+    }
+  }
+  return saved;
 }

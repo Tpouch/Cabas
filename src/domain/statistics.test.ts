@@ -3,7 +3,9 @@ import {
   averageBasket,
   changeVsPrevious,
   fillMonths,
+  type ProductObservation,
   promotionSavings,
+  savingsVsHighestPrice,
   spendPerStore,
   type StatLine,
   type StatPurchase,
@@ -159,5 +161,60 @@ describe("spendPerStore", () => {
       purchase({ storeId: "auchan", storeName: "Auchan", totalCents: 1000 }),
     ];
     expect(spendPerStore(purchases).map((s) => s.storeName)).toEqual(["Auchan", "Lidl"]);
+  });
+});
+
+describe("savingsVsHighestPrice", () => {
+  const seen = (storeId: string, priceCents: number, iso: string, productId = "penne"): ProductObservation => ({
+    productId,
+    storeId,
+    priceCents,
+    observedAt: day(iso),
+    createdAt: day(iso),
+  });
+  // Penne, bought on 2026-10-10 at Lidl ("A"), 2 × 1,00 €; Lidl's own price is the purchase's observation.
+  const bought = (overrides: Partial<StatLine> = {}) =>
+    purchase({ purchasedAt: day("2026-10-10"), lines: [line({ quantity: 2, unitPriceCents: 100, ...overrides })] });
+  const own = seen("lidl", 100, "2026-10-10");
+
+  it("saves nothing when only one store has a price", () => {
+    expect(savingsVsHighestPrice([bought()], [own])).toBe(0);
+  });
+
+  it("saves the gap with the most expensive store, times the quantity", () => {
+    expect(savingsVsHighestPrice([bought()], [own, seen("auchan", 130, "2026-10-01")])).toBe(60);
+  });
+
+  it("uses each store's latest price as of the purchase date", () => {
+    const observations = [own, seen("auchan", 130, "2026-10-01"), seen("auchan", 110, "2026-10-05")];
+    expect(savingsVsHighestPrice([bought()], observations)).toBe(20);
+  });
+
+  it("ignores prices recorded after the purchase", () => {
+    expect(savingsVsHighestPrice([bought()], [own, seen("auchan", 130, "2026-10-12")])).toBe(0);
+  });
+
+  it("never counts a negative saving when the store was already the most expensive", () => {
+    expect(savingsVsHighestPrice([bought()], [own, seen("auchan", 90, "2026-10-01")])).toBe(0);
+  });
+
+  it("compares the regular price, leaving promotions to their own indicator", () => {
+    const promoted = bought({ promo: { kind: "PERCENT_OFF", percent: 30 } });
+    expect(savingsVsHighestPrice([promoted], [own, seen("auchan", 130, "2026-10-01")])).toBe(60);
+  });
+
+  it("rounds loose quantities half up", () => {
+    const loose = bought({ quantity: 1.5, unitPriceCents: 200 });
+    expect(savingsVsHighestPrice([loose], [seen("lidl", 200, "2026-10-10"), seen("auchan", 235, "2026-10-01")])).toBe(53);
+  });
+
+  it("evaluates each purchase against its own date", () => {
+    const early = purchase({ purchasedAt: day("2026-10-03"), lines: [line({ quantity: 2 })] });
+    const observations = [seen("lidl", 100, "2026-10-03"), own, seen("auchan", 130, "2026-10-05")];
+    expect(savingsVsHighestPrice([early, bought()], observations)).toBe(60);
+  });
+
+  it("only uses prices of the same product", () => {
+    expect(savingsVsHighestPrice([bought()], [own, seen("auchan", 130, "2026-10-01", "riz")])).toBe(0);
   });
 });
