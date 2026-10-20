@@ -1,8 +1,6 @@
 node_modules
 .next
 .git
-.superpowers
-.claude
 uploads
 .env
 .env.*

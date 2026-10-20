@@ -60,7 +60,7 @@ export function spendPerStore(purchases: StatPurchase[]): StoreSpend[] {
 
 export type ProductObservation = PriceObservationInput & { productId: string };
 
-/** Spec §5.6: against the highest current price as of the purchase date, when at least two stores have one. */
+/** Against the highest current price as of the purchase date, when at least two stores have one. */
 export function savingsVsHighestPrice(purchases: StatPurchase[], observations: ProductObservation[]): number {
   const byProduct = Map.groupBy(observations, (observation) => observation.productId);
   let saved = 0;

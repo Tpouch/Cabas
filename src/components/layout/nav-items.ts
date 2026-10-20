@@ -11,7 +11,7 @@ export const NAV_ITEMS: NavItem[] = [
 
 export const NEW_PURCHASE_HREF = "/purchases/new";
 
-/** The purchase form has its own fixed save bar (spec §6.1). */
+/** The purchase form has its own fixed save bar. */
 export function hidesMobileBar(pathname: string): boolean {
   return pathname === NEW_PURCHASE_HREF || /^\/purchases\/[^/]+\/edit$/.test(pathname);
 }
