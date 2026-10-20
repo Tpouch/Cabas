@@ -1,122 +1,106 @@
 # cabas
 
-Self-hosted, mobile-first app to record grocery purchases, compare prices across stores
-and plan shopping lists. Single user behind one password, served over HTTPS through Nginx Proxy
-Manager. See [`docs/superpowers/specs/2026-10-03-cabas-design.md`](docs/superpowers/specs/2026-10-03-cabas-design.md).
+**A personal notebook for your grocery shopping: what you bought, where, and for how much.**
 
-## Development
+A *cabas* is the French word for a shopping tote. The app is just as simple: after each trip to
+the supermarket, you note what you bought on your phone. Over time, cabas remembers every price
+in every store, and tells you where each product is cheapest.
 
-```bash
-cp .env.example .env
-docker compose -f docker-compose.dev.yml --env-file .env up -d   # PostgreSQL on localhost:5432
-pnpm install
-pnpm prisma migrate dev
-pnpm dev
-```
+<p align="center">
+  <img src=".github/screenshots/mobile-purchases.png" width="250" alt="List of past shopping trips, grouped by month, with the amount spent in each store">
+  &nbsp;
+  <img src=".github/screenshots/mobile-new-purchase.png" width="250" alt="Recording a new shopping trip: store, date, and items with quantity and price">
+  &nbsp;
+  <img src=".github/screenshots/mobile-purchase-detail.png" width="250" alt="Detail of a shopping trip with a '2 bought = 1 free' promotion">
+</p>
 
-Checks: `pnpm lint && pnpm typecheck && pnpm test` (integration tests start their own
-PostgreSQL container, so Docker must be running). End-to-end: `pnpm test:e2e` (builds the
-app and starts a throwaway PostgreSQL container on port 5433).
+## Why cabas?
 
-## Deployment (Coolify + Nginx Proxy Manager)
+Prices change all the time, and they are never the same from one store to the next. Is coffee
+cheaper at Lidl or at Leclerc? Was that "3 for 2" deal really a bargain? How much did groceries
+cost this month?
 
-HTTPS is handled by Nginx Proxy Manager (NPM); Coolify only builds and runs the stack.
+Receipts end up in the bin and nobody remembers prices. cabas keeps them for you, without a
+spreadsheet and without effort: a few taps right after shopping, and the comparison builds
+itself.
 
-1. In Coolify, create a resource from this GitHub repository (private repo: connect it with
-   the Coolify GitHub App or a deploy key) and choose the **Docker Compose** build pack with
-   `docker-compose.yml`. Do **not** set a domain on the services (Coolify's own proxy is unused).
-2. Fill the environment variables Coolify detected from the Compose file. The required ones
-   block the deployment until they are set:
-   - `POSTGRES_PASSWORD` (required): `openssl rand -hex 24` (no URL special characters);
-   - `APP_PASSWORD_HASH` (required): the line printed by `pnpm hash-password`, run on your
-     computer (at least 12 characters; a long passphrase is best, the app is on the internet);
-   - `SESSION_SECRET` (required): `openssl rand -base64 48`;
-   - `APP_PORT` (default 3000): the port published on the server, which NPM forwards to;
-   - `APP_BIND` (required): the Coolify server's LAN IP, the address NPM connects to.
-3. In **Configuration › Advanced**, turn off **Inject Build Args to Dockerfile**: the build
-   needs no variable, and this keeps the password hash and secret out of the build.
-4. Deploy. Migrations run when the `app` container starts; `pgdata` and `uploads` are kept
-   between deployments.
-5. In NPM, add a proxy host:
-   - domain: `cabas.devgoblin.fr`; scheme `http`; forward hostname: the Coolify server's LAN IP;
-     forward port: `APP_PORT`;
-   - SSL tab: request a Let's Encrypt certificate, enable **Force SSL**, **HTTP/2** and **HSTS**.
-   NPM sends `Host`, `X-Forwarded-For` (client address appended) and `X-Forwarded-Proto`,
-   which is all the app needs. Photos up to 10 MB go through NPM's default body size limit.
+## What you can do
 
-### Firewall
+### Note a shopping trip in a few minutes
 
-The published port serves plain HTTP, and the login limit trusts the last `X-Forwarded-For`
-entry, which only NPM must be able to set. Allow `APP_PORT` from NPM only. Docker publishes
-ports around ufw/firewalld, so filter in the `DOCKER-USER` chain on the Coolify server
-(replace the port and NPM's IP, then persist it, e.g. with `iptables-persistent`):
+Pick the store, then add what you bought. If cabas already knows the product, it fills in the
+last price you paid **in that store**: you only change it if it went up or down. New products
+can be created on the spot, without leaving the screen.
 
-```bash
-sudo iptables -I DOCKER-USER -p tcp -m conntrack --ctorigdstport 3000 ! -s 192.168.1.10 -j DROP
-```
+- Change quantities with **+** and **−**, or type a weight for loose products (1.5 kg of bananas).
+- Add the **promotions** printed on the receipt: money off, a percentage off, "the 2nd one at
+  −50 %", or "2 bought = 1 free". cabas works out the real amount you paid, and keeps the
+  normal price aside so comparisons stay fair.
+- Type the total from the receipt: cabas shows the gap if it doesn't match the sum of the items,
+  so you spot a forgotten line straight away.
+- Take a **photo of the receipt** to keep it with the trip.
+- Interrupted by a phone call? The trip in progress is saved on the phone until you finish it.
 
-Without this rule the app still requires the password, but a device on the LAN could reach it
-over plain HTTP and spread its login attempts over forged addresses (the global limit of 50
-failures per 15 minutes still applies).
+### Look back at your spending
 
-### Local test of the production stack
+Every trip is listed by month, with the total spent. Open one to see each item, the promotions,
+the receipt photo, and change or delete it if you made a mistake.
 
-Set `COOKIE_SECURE=false` and `APP_BIND=127.0.0.1` in `.env` (plain HTTP on this machine), then:
+### See where your money goes
 
-```bash
-docker compose --env-file .env up -d --build    # http://127.0.0.1:<APP_PORT>
-```
+The home page sums up the month: how much you spent and how it compares with the month
+before, how many trips you made and your average basket, your most bought products, and what
+each store cost you. A chart shows your spending over the last 12 months, and the arrows at the
+top take you back to any earlier month.
 
-### Backup and restore
+cabas also tells you **how much you saved**: through promotions, and by buying in a store that
+was cheaper than the most expensive one you know for the same product.
 
-`scripts/backup.sh [output-dir]` writes a database dump (`cabas-db-YYYYMMDD-HHMM.dump`,
-`pg_dump` custom format) and an archive of the uploaded images
-(`cabas-uploads-YYYYMMDD-HHMM.tar.gz`), then prints their paths. Copy the script to the
-server and run it from the Compose project directory. On Coolify, find that directory with:
+<p align="center">
+  <img src=".github/screenshots/desktop-dashboard.png" width="820" alt="The monthly overview on a computer: amount spent, number of trips, money saved, a 12-month chart, most bought products and spending per store">
+</p>
 
-```bash
-docker inspect <app container> --format '{{ index .Config.Labels "com.docker.compose.project.working_dir" }}'
-```
+### Find the cheapest store for each product
 
-Daily at 03:00, keeping 14 days (`crontab -e` on the server):
+Each product has its own page with its latest price **in every store**. The cheapest one is
+highlighted, and prices are also shown **per kilo, per litre or per piece**, so a 500 g pack can
+be compared fairly with a 1 kg one. You can also add a price you saw without buying (in a store
+or a leaflet).
 
-```cron
-0 3 * * * cd /path/to/project && /usr/local/bin/cabas-backup.sh /srv/backups/cabas && find /srv/backups/cabas -name 'cabas-*' -mtime +14 -delete
-```
+When two products can replace each other (two brands of rice, for example), link them as
+**alternatives** to see at a glance which one is better value.
 
-Restore, from the same directory (this replaces the current data):
+<p align="center">
+  <img src=".github/screenshots/desktop-product.png" width="820" alt="A product page on a computer: price in three stores, cheapest one highlighted, price per kilo, and an alternative product">
+</p>
 
-```bash
-docker compose exec -T db sh -c 'pg_restore --clean --if-exists -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < cabas-db-YYYYMMDD-HHMM.dump
-docker compose exec -T app sh -c 'rm -rf /data/uploads/* && tar xzf - -C /data' < cabas-uploads-YYYYMMDD-HHMM.tar.gz
-docker compose restart app
-```
+### On your phone and on your computer
 
-### Install on a phone
+cabas is made for the phone first, in the aisles or at the checkout, but it works just as well
+on a computer. Everything is in one place: what you enter on one shows up on the other, with
+nothing to sync.
 
-The app has a web app manifest and can be added to the home screen. It needs the network:
-there is no offline mode.
+You can also add cabas to your phone's home screen: it then opens like an app, with its own
+icon. It needs an internet connection to work.
 
 - iPhone (Safari): Partager › Sur l’écran d’accueil.
 - Android (Chrome): menu ⋮ › Installer l’application.
 
-### Password
+## Coming next
 
-The app asks for one password. Generate its hash and a session secret, then put both in `.env`
-before starting the stack:
+**Shopping lists**: prepare your list at home, see what it would cost in each store, tick items
+off while shopping, then turn the list into a recorded trip in one tap.
 
-```bash
-pnpm hash-password            # asks the password twice (hidden), prints APP_PASSWORD_HASH=…
-openssl rand -base64 48       # use as SESSION_SECRET
-```
+## Your data stays at home
 
-Changing the password (new hash) or `SESSION_SECRET` logs every device out. "Se déconnecter"
-only removes the cookie from that device: if you think a device or cookie was compromised,
-generate a new `SESSION_SECRET` and redeploy. The session cookie is
-`Secure` (`COOKIE_SECURE=true` by default): it is only sent over HTTPS. After 5 wrong passwords
-within 15 minutes from one address, that address waits until the end of those 15 minutes; after
-50 failures from all addresses together, every new login waits too. Devices already signed in
-are not affected.
+cabas is not an online service run by a company. It runs on a small personal server at home,
+and is protected by a password. There is no account to create, no advertising, and nothing is
+shared with anyone: your purchases, prices and receipt photos never leave your own machine.
+A backup of everything can be scheduled, every night for example.
 
-Migrations run automatically when the `app` container starts. Data lives in two named
-volumes: `pgdata` (database) and `uploads` (photos).
+The app is in French.
+
+## Installation
+
+Hosting cabas requires some technical knowledge (a server with Docker). The steps are in
+[INSTALL.md](INSTALL.md).
